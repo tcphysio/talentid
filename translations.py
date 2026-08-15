@@ -16,7 +16,7 @@ field, keep this in mind.
 TRANSLATIONS = {
     "en": {
         "header_tagline": "Talent Identification",
-        "tag_apply": "Player Registration",
+        "tag_apply": "Talent Pathway",
 
         "apply_intro": (
             "Tell us about yourself and we'll be in touch. Fields marked "
@@ -129,7 +129,7 @@ TRANSLATIONS = {
 
     "it": {
         "header_tagline": "Identificazione dei Talenti",
-        "tag_apply": "Registrazione Giocatore",
+        "tag_apply": "Percorso Talenti",
 
         "apply_intro": (
             "Raccontaci di te e ti ricontatteremo. I campi contrassegnati "

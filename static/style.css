@@ -289,3 +289,16 @@ a.row-link:hover { text-decoration: underline; }
   margin-top: 8px;
   flex-wrap: wrap;
 }
+
+/* Honeypot spam trap: off-screen for real users, still present in the DOM
+   (unlike display:none) so basic bots that skip hidden fields still fill
+   it in. See app.py's apply() for the check. Never remove the name
+   "hp_website" without updating app.py to match. */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

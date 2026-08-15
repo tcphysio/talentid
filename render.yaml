@@ -22,6 +22,8 @@ services:
         sync: false   # set this yourself in the Render dashboard — don't commit it
       - key: DB_DIR
         value: /var/data
+      - key: FOLLOWUP_CRON_TOKEN
+        generateValue: true
     disk:
       name: talentid-data
       mountPath: /var/data

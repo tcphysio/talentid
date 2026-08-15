@@ -85,14 +85,53 @@ profile is marked `Stale` rather than chased forever. Reminder sending is
 
 Two things need connecting for this to run itself in production:
 
-1. **Scheduled follow-up sweeps.** `/admin/run-follow-ups` currently has to be
-   clicked. In production, call that same logic on a daily schedule (cron,
-   a task scheduler, or a platform's built-in scheduled jobs).
-2. **Real email sending.** `build_follow_up_message()` in `logic.py` drafts
-   the message; `app.py`'s `run_follow_ups()` route logs it instead of
-   sending it. Swap the `INSERT INTO follow_ups ...` stub for a call to
-   whatever email service Federazione Cricket Italiana (FCRI) uses (Gmail API, SendGrid, etc.) and
-   flip `sent_status` from `'stubbed'` to `'sent'`.
+1. **Scheduled follow-up sweeps.** `/admin/run-follow-ups` still works as a
+   manual button for staff, but there's now also a machine-triggered
+   version at `/cron/run-follow-ups?token=...` for an external scheduler —
+   see "Scheduling follow-ups" below.
+2. **Real email sending.** Still stubbed as of this build (not yet wired up
+   — a deliberate choice, revisit when ready). `build_follow_up_message()`
+   in `logic.py` drafts the message; `app.py`'s `_run_follow_up_sweep()`
+   logs it instead of sending it. To wire it up: swap the
+   `INSERT INTO follow_ups ...` stub for a call to whatever email service
+   Federazione Cricket Italiana (FCRI) uses (Gmail SMTP + an app password
+   is the simplest option if FCRI already has a Gmail/Workspace address;
+   SendGrid or similar if volume grows), and flip `sent_status` from
+   `'stubbed'` to `'sent'`.
+
+## Scheduling follow-ups (external cron)
+
+Render's free tier has no built-in cron (that's a paid add-on there), so
+the follow-up sweep needs an external scheduler to hit the app on a timer
+instead of a staff member clicking the button in `/admin` every day.
+
+`app.py` exposes `/cron/run-follow-ups?token=...` for exactly this — it's
+deliberately **not** behind `ADMIN_PASSWORD`, so a third-party scheduler's
+config never has to hold the staff dashboard password. It's gated by its
+own `FOLLOWUP_CRON_TOKEN` env var instead, which both `render-free.yaml`
+and `render.yaml` now auto-generate a random value for on deploy.
+
+### Steps
+
+1. **Get your token.** Render dashboard → your service → Environment →
+   copy the value of `FOLLOWUP_CRON_TOKEN`.
+2. **Sign up free** at [cron-job.org](https://cron-job.org) (or any similar
+   free URL-pinger — EasyCron, UptimeRobot's monitor-as-cron trick, etc.)
+3. **Create a new cron job** pointed at:
+   ```
+   https://<your-service-name>.onrender.com/cron/run-follow-ups?token=<your-token>
+   ```
+   Set it to run once a day (any time — the sweep only acts on profiles
+   whose `next_follow_up_due` has already passed, so running it more or
+   less often just changes how promptly it catches up, not what it does).
+4. **Verify it's working**: trigger it manually once from cron-job.org's
+   dashboard ("Run now" / "Test run"), then check `/admin` — the flash
+   message system doesn't apply here (no browser session), but you'll see
+   `follow_up_count` increment and new rows in a player's follow-up history
+   on `/admin/player/<id>` if any profiles were due.
+
+This same endpoint works for PythonAnywhere and Replit too, if either of
+those ever needs an external scheduler instead of the platform's own.
 
 ## Deployment — free AND permanent (Render + Neon) — recommended
 
@@ -142,10 +181,20 @@ pre-configured as a Render Blueprint.
    log into `/admin` with.
 7. **Deploy.** Live at `https://<your-service-name>.onrender.com/apply`
    once the build finishes (a couple of minutes).
-8. **Seed or don't seed demo data** — same as the PythonAnywhere path:
-   `python seed.py` once via Render's Shell tab if you want a look with
-   sample players first, but skip it (or clear the players table after)
-   before treating it as the real production site.
+8. **Seed or don't seed demo data.** Render's free tier has no Shell tab
+   (that's paid-only), so run `seed.py` from your own computer instead,
+   pointed at the same Neon database:
+   ```bash
+   DATABASE_URL="<your-neon-connection-string>" python3 seed.py
+   ```
+   Before treating the site as live for real players, clear the 5 sample
+   players the same way:
+   ```bash
+   DATABASE_URL="<your-neon-connection-string>" python3 clear_demo_data.py
+   ```
+   `clear_demo_data.py` only deletes rows matching the exact sample emails
+   from `seed.py` — safe to run even if real submissions have already come
+   in alongside the demo ones.
 
 That's it — no renewal reminders needed for this one.
 
@@ -298,16 +347,22 @@ to the SQLite version.
 
 ### Still worth doing before sending this to real players (any host)
 
-- **Spam/bot protection on `/apply`** — it's a public form with no
-  protection yet (a honeypot field or reCAPTCHA would cover this).
-- **Wire up real email sending** for follow-up reminders — see "Turning the
-  stub into real automation" above. Note: PythonAnywhere's free plan
-  restricts outbound internet to an allowlist of sites, so check their
-  current docs on sending email before wiring this up on the free tier.
-- **Schedule the follow-up sweep** — `/admin/run-follow-ups` still has to be
-  triggered manually. PythonAnywhere's free plan doesn't include scheduled
-  tasks (that's a paid feature there too); Render has Cron Jobs as a paid
-  add-on.
+- ~~Spam/bot protection on `/apply`~~ **Done** — a honeypot field now guards
+  the form (`static/style.css` `.hp-field` + the check in `app.py`'s
+  `apply()`). Catches basic bots that fill in every field; a determined,
+  targeted spammer would still get through, so reCAPTCHA is worth adding
+  later if that ever becomes a real problem.
+- **Wire up real email sending** for follow-up reminders — still stubbed as
+  of this build, deferred by choice for now. See "Turning the stub into
+  real automation" above when ready to pick it back up. Note:
+  PythonAnywhere's free plan restricts outbound internet to an allowlist of
+  sites, so check their current docs on sending email before wiring this up
+  there specifically.
+- ~~Schedule the follow-up sweep~~ **Endpoint done, external scheduler still
+  needs setting up** — `/admin/run-follow-ups` still works as a manual
+  button, and there's now a `/cron/run-follow-ups?token=...` endpoint for
+  an automated daily sweep. See "Scheduling follow-ups" above to actually
+  point a free scheduler at it.
 
 ## Open decisions for Federazione Cricket Italiana (FCRI)
 

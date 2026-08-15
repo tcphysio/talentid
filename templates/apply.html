@@ -7,6 +7,14 @@
 </div>
 
 <form method="post" class="card">
+  {# Honeypot: invisible to real visitors, tempting to bots that fill in
+     every field. If it comes back non-empty, app.py silently drops the
+     submission. Keep the name in sync with app.py's check. #}
+  <div class="hp-field" aria-hidden="true">
+    <label for="hp_website">Leave this field blank</label>
+    <input type="text" id="hp_website" name="hp_website" tabindex="-1" autocomplete="off">
+  </div>
+
   <fieldset>
     <legend>{{ t('section_about_you') }}</legend>
 

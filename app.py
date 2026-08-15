@@ -98,6 +98,13 @@ def home():
 @app.route("/apply", methods=["GET", "POST"])
 def apply():
     if request.method == "POST":
+        # Honeypot: a field real visitors never see or fill in (see
+        # templates/apply.html + static/style.css .hp-field). Bots that
+        # blindly fill every input trip it. Pretend success without
+        # touching the database or tipping the bot off.
+        if request.form.get("hp_website", "").strip():
+            return redirect(url_for("apply", submitted="1"))
+
         data = {field: request.form.get(field, "").strip() for field in FORM_FIELDS}
 
         computed = logic.evaluate_player(data)
@@ -230,15 +237,17 @@ def player_action(player_id):
     return redirect(url_for("player_detail", player_id=player_id))
 
 
-@app.route("/admin/run-follow-ups")
-@requires_admin_auth
-def run_follow_ups():
+FOLLOWUP_CRON_TOKEN = os.environ.get("FOLLOWUP_CRON_TOKEN")  # see README - Scheduling follow-ups
+
+
+def _run_follow_up_sweep() -> int:
     """
-    Simulates the scheduled job that would run daily in production
-    (see README - cron / task scheduler). Finds incomplete profiles
-    whose next_follow_up_due has passed, logs a reminder, and advances
-    the chase sequence. Sending is stubbed: it logs the drafted message
-    rather than emailing it, so this is safe to click in the demo.
+    The actual sweep logic, shared by the manual admin button and the
+    token-protected /cron endpoint below. Finds incomplete profiles whose
+    next_follow_up_due has passed, logs a reminder, and advances the chase
+    sequence. Sending is stubbed: it logs the drafted message rather than
+    emailing it (see README - Turning the stub into real automation).
+    Returns the number of reminders logged.
     """
     conn = get_conn()
     today = datetime.now().strftime("%Y-%m-%d")
@@ -273,8 +282,38 @@ def run_follow_ups():
 
     conn.commit()
     conn.close()
+    return sent
+
+
+@app.route("/admin/run-follow-ups")
+@requires_admin_auth
+def run_follow_ups():
+    """Manual trigger for staff -- click the button in /admin."""
+    sent = _run_follow_up_sweep()
     flash(f"Follow-up sweep complete: {sent} reminder(s) logged.")
     return redirect(url_for("admin"))
+
+
+@app.route("/cron/run-follow-ups")
+def cron_run_follow_ups():
+    """
+    Machine-triggered version of the same sweep, for an external scheduler
+    (Render's free tier has no built-in cron) -- see README, "Scheduling
+    follow-ups". Deliberately gated by its own FOLLOWUP_CRON_TOKEN rather
+    than ADMIN_PASSWORD, so a third-party scheduler config never needs to
+    hold the staff dashboard password. Requires ?token=... to match.
+    """
+    if not FOLLOWUP_CRON_TOKEN:
+        return Response(
+            "Follow-up cron endpoint is not configured: set FOLLOWUP_CRON_TOKEN "
+            "in your deployment environment to enable it.",
+            503,
+        )
+    if request.args.get("token") != FOLLOWUP_CRON_TOKEN:
+        return Response("Forbidden", 403)
+
+    sent = _run_follow_up_sweep()
+    return {"reminders_logged": sent}
 
 
 if __name__ == "__main__":
