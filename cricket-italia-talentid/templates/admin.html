@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}CRM Dashboard — FCRI{% endblock %}
+{% block header_tag %}Staff CRM Dashboard{% endblock %}
+{% block header_tagline %}Talent Identification{% endblock %}
+{% block lang_toggle %}{% endblock %}
+{% block content %}
+
+<div class="stat-row">
+  {% for row in summary %}
+  <div class="stat">
+    <div class="n">{{ row.n }}</div>
+    <div class="l">{{ row.priority_tier or 'Unscored' }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <form class="filters" method="get">
+    <div>
+      <label>Status</label>
+      <select name="status" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for s in ['New','Incomplete-Chasing','Complete','Ready for Review','Contacted','Shortlisted','Rejected','Stale'] %}
+        <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Priority</label>
+      <select name="tier" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for t in ['Hot Lead','Warm','Needs More Info','Low Priority'] %}
+        <option value="{{ t }}" {% if tier_filter == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Location</label>
+      <select name="location" onchange="this.form.submit()">
+        <option value="">All</option>
+        <option value="Italy-based" {% if location_filter == 'Italy-based' %}selected{% endif %}>Italy-based</option>
+        <option value="Overseas" {% if location_filter == 'Overseas' %}selected{% endif %}>Overseas</option>
+      </select>
+    </div>
+    <div>
+      <label>Sort</label>
+      <select name="sort" onchange="this.form.submit()">
+        <option value="score_desc" {% if sort == 'score_desc' %}selected{% endif %}>Score (high → low)</option>
+        <option value="score_asc" {% if sort == 'score_asc' %}selected{% endif %}>Score (low → high)</option>
+        <option value="submitted_desc" {% if sort == 'submitted_desc' %}selected{% endif %}>Newest first</option>
+        <option value="submitted_asc" {% if sort == 'submitted_asc' %}selected{% endif %}>Oldest first</option>
+      </select>
+    </div>
+    <div>
+      <a class="btn gold" href="{{ url_for('run_follow_ups') }}">Run follow-up sweep</a>
+    </div>
+  </form>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Location</th>
+      <th>Level</th>
+      <th>Eligibility</th>
+      <th>Complete</th>
+      <th>Score</th>
+      <th>Priority</th>
+      <th>Status</th>
+      <th>Submitted</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in players %}
+    <tr>
+      <td><a class="row-link" href="{{ url_for('player_detail', player_id=p.id) }}">{{ p.full_name }}</a></td>
+      <td>{{ p.location_bucket }} <span class="muted">({{ p.country_of_residence }})</span></td>
+      <td>{{ p.level_tier }}</td>
+      <td>
+        {% if p.eligibility_flag == 'Confirmed Eligible' %}<span class="pill eligible">{{ p.eligibility_flag }}</span>
+        {% elif p.eligibility_flag == 'Likely Eligible' %}<span class="pill likely">{{ p.eligibility_flag }}</span>
+        {% elif p.eligibility_flag == 'Needs Manual Check' %}<span class="pill check">{{ p.eligibility_flag }}</span>
+        {% else %}<span class="pill not-eligible">{{ p.eligibility_flag }}</span>{% endif %}
+      </td>
+      <td>{{ p.completeness_pct }}%</td>
+      <td><strong>{{ p.score }}</strong></td>
+      <td>
+        {% if p.priority_tier == 'Hot Lead' %}<span class="pill hot">Hot Lead</span>
+        {% elif p.priority_tier == 'Warm' %}<span class="pill warm">Warm</span>
+        {% elif p.priority_tier == 'Needs More Info' %}<span class="pill info">Needs Info</span>
+        {% else %}<span class="pill low">Low Priority</span>{% endif %}
+      </td>
+      <td>{{ p.status }}</td>
+      <td class="muted">{{ p.submitted_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9" class="muted">No submissions match these filters.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

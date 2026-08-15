@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Thanks — FCRI{% endblock %}
+{% block wrap_class %}form-wrap{% endblock %}
+{% block content %}
+<div class="card">
+  <h2 style="margin-top:0;">{{ t('thanks_heading').format(name=player.full_name) }}</h2>
+  <p>{{ t('thanks_received') }}</p>
+
+  {% if player.completeness_pct < 100 %}
+    <p><strong>{{ t('thanks_incomplete_pct').format(pct=player.completeness_pct) }}</strong>
+    {{ t('thanks_incomplete_body') }}</p>
+  {% else %}
+    <p>{{ t('thanks_complete_body') }}</p>
+  {% endif %}
+
+  <p class="muted">{{ t('thanks_reference').format(id=player.id) }}</p>
+</div>
+{% endblock %}

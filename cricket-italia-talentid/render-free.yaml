@@ -1,0 +1,31 @@
+# Render Blueprint for the FREE, permanent deployment path: Render's free
+# web service (compute) + Neon's free Postgres (data). Neither tier ever
+# expires or needs manual renewal -- unlike Render's free disk-less SQLite
+# (which loses data on every spin-down) or PythonAnywhere's free tier
+# (which needs a monthly click to stay reachable).
+#
+# This is a separate file from render.yaml (which is the paid Starter +
+# persistent-disk + SQLite path) so both remain available. Use this one
+# for "New + -> Blueprint" if you're following the free/Neon walkthrough
+# in README.md.
+#
+# Requires: a Neon Postgres connection string pasted into DATABASE_URL
+# after the service is created (Render will prompt for it, since it's
+# marked sync: false so it's never committed to git).
+
+services:
+  - type: web
+    name: cricket-italia-talent-id
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        sync: false

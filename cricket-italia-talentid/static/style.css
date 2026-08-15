@@ -1,0 +1,291 @@
+:root {
+  /* Pulled directly from the FCRI crest (static/img/fcri-logo.png) */
+  --navy: #00476b;    /* darkened variant of the crest blue, for header/nav */
+  --blue: #007bb7;    /* the crest's actual blue, for primary actions/links */
+  --green: #009146;   /* crest's tricolore green */
+  --gold: #c9a868;    /* crest's gold border/batter */
+  --red: #ce2937;     /* crest's tricolore red */
+
+  --grey-bg: #f4f5f7;
+  --grey-border: #dfe3e8;
+  --text: #1c2430;
+  --muted: #667085;
+  --amber: #b76e00;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--grey-bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+header.site {
+  background: var(--navy);
+  color: white;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+header.site .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+header.site .brand img {
+  height: 42px;
+  width: 42px;
+  display: block;
+}
+
+header.site h1 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+header.site .tag {
+  color: var(--gold);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+header.site .header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lang-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lang-toggle a {
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  padding: 2px 4px;
+}
+
+.lang-toggle a:hover { color: white; }
+.lang-toggle a.active { color: var(--gold); }
+.lang-toggle span { color: rgba(255, 255, 255, 0.4); }
+
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.form-wrap { max-width: 720px; }
+
+.card {
+  background: white;
+  border: 1px solid var(--grey-border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+fieldset {
+  border: none;
+  border-top: 1px solid var(--grey-border);
+  padding: 16px 0 4px 0;
+  margin: 0 0 8px 0;
+}
+
+legend {
+  font-weight: 600;
+  color: var(--navy);
+  padding: 0 6px 0 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 12px 0 4px 0;
+  color: var(--text);
+}
+
+label .hint {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+input[type=text], input[type=email], input[type=tel], input[type=date], select, textarea {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--grey-border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+}
+
+textarea { min-height: 60px; resize: vertical; }
+
+button, .btn {
+  background: var(--blue);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+button.secondary, .btn.secondary {
+  background: white;
+  color: var(--navy);
+  border: 1px solid var(--grey-border);
+}
+
+button.danger, .btn.danger { background: var(--red); }
+button.gold, .btn.gold { background: var(--gold); color: var(--navy); }
+
+.submit-row { margin-top: 20px; }
+
+.flash {
+  background: #e6f4ea;
+  border: 1px solid var(--green);
+  color: #0f5132;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Dashboard */
+.stat-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.stat {
+  background: white;
+  border: 1px solid var(--grey-border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  min-width: 130px;
+}
+
+.stat .n { font-size: 24px; font-weight: 700; color: var(--navy); }
+.stat .l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border: 1px solid var(--grey-border);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+th {
+  background: var(--navy);
+  color: white;
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--grey-border);
+}
+
+tr:hover td { background: #fafbfc; }
+
+a.row-link { color: var(--navy); text-decoration: none; font-weight: 600; }
+a.row-link:hover { text-decoration: underline; }
+
+.pill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pill.hot { background: #fde2e1; color: var(--red); }
+.pill.warm { background: #fdf1d6; color: var(--amber); }
+.pill.info { background: #e2e8f5; color: var(--navy); }
+.pill.low { background: #eee; color: var(--muted); }
+
+.pill.eligible { background: #dcf3e6; color: var(--green); }
+.pill.likely { background: #eaf3dc; color: #4a7a0f; }
+.pill.check { background: #fdf1d6; color: var(--amber); }
+.pill.not-eligible { background: #f2f2f2; color: var(--muted); }
+
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.filters label { margin: 0 0 4px 0; }
+.filters select { width: auto; min-width: 160px; }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 24px;
+  font-size: 14px;
+}
+
+.detail-grid .k { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+.detail-grid .v { margin-bottom: 8px; }
+
+.score-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.score-box .score-num {
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.muted { color: var(--muted); font-size: 13px; }
+
+.back-link { display: inline-block; margin-bottom: 14px; color: var(--muted); text-decoration: none; font-size: 13px; }
+.back-link:hover { text-decoration: underline; }
+
+.action-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
