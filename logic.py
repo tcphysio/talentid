@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 # Tune this list first if intake requirements change.
 # ---------------------------------------------------------------------------
 REQUIRED_FIELDS = [
-    "full_name", "email", "country_of_residence", "primary_role",
+    "full_name", "email", "date_of_birth", "country_of_residence", "primary_role",
     "current_club", "highest_level_played",
     "birthplace_country", "holds_italian_passport",
 ]
@@ -193,6 +193,7 @@ def build_follow_up_message(player: dict, missing: list) -> str:
     field_labels = {
         "full_name": "your full name",
         "email": "a contact email",
+        "date_of_birth": "your date of birth",
         "country_of_residence": "your country of residence",
         "primary_role": "your playing role (batter/bowler/all-rounder/keeper)",
         "current_club": "your current club",

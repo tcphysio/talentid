@@ -24,11 +24,27 @@ TRANSLATIONS = {
             "build a fuller picture but can be added later."
         ),
 
+        "section_prescreen": "Quick eligibility check",
         "section_about_you": "About you",
         "section_your_cricket": "Your cricket",
         "section_evidence": "Evidence",
         "section_eligibility": "Eligibility (Italy)",
         "section_nomination": "Nomination",
+
+        "prescreen_intro": (
+            "Before the full form, a few quick questions to check there's a "
+            "realistic pathway to representing Italy. If none of these apply "
+            "to you right now, we're not able to take the registration "
+            "further at this time."
+        ),
+        "prescreen_blocked_body": (
+            "Thanks for your interest. Based on your answers, we don't "
+            "currently see a pathway to Italian eligibility for you, so "
+            "we're not able to proceed with a registration right now. If "
+            "your circumstances change — for example your passport "
+            "application progresses, or you become Italy-resident — you're "
+            "welcome to come back and register then."
+        ),
 
         "eligibility_intro": (
             "We ask these questions to understand potential eligibility to "
@@ -40,7 +56,7 @@ TRANSLATIONS = {
         "label_email": "Email *",
         "label_phone": "Phone",
         "hint_phone": "(with country code)",
-        "label_dob": "Date of birth",
+        "label_dob": "Date of birth *",
         "label_country_residence": "Country of residence *",
         "placeholder_country_residence": "e.g. Italy, Australia, India",
         "label_city": "City",
@@ -138,11 +154,27 @@ TRANSLATIONS = {
             "aggiunti in seguito."
         ),
 
+        "section_prescreen": "Verifica rapida di idoneità",
         "section_about_you": "Su di te",
         "section_your_cricket": "Il tuo cricket",
         "section_evidence": "Documentazione",
         "section_eligibility": "Idoneità (Italia)",
         "section_nomination": "Segnalazione",
+
+        "prescreen_intro": (
+            "Prima del modulo completo, alcune domande rapide per verificare "
+            "che ci sia un percorso realistico per rappresentare l'Italia. "
+            "Se nessuna di queste condizioni ti riguarda al momento, non "
+            "siamo in grado di proseguire con la registrazione."
+        ),
+        "prescreen_blocked_body": (
+            "Grazie per il tuo interesse. In base alle tue risposte, al "
+            "momento non vediamo un percorso di idoneità italiana per te, "
+            "quindi non possiamo procedere con la registrazione. Se la tua "
+            "situazione dovesse cambiare — ad esempio se la tua richiesta di "
+            "passaporto va avanti, o diventi residente in Italia — sei il "
+            "benvenuto a tornare e registrarti allora."
+        ),
 
         "eligibility_intro": (
             "Facciamo queste domande per comprendere la potenziale idoneità "
@@ -154,7 +186,7 @@ TRANSLATIONS = {
         "label_email": "Email *",
         "label_phone": "Telefono",
         "hint_phone": "(con prefisso internazionale)",
-        "label_dob": "Data di nascita",
+        "label_dob": "Data di nascita *",
         "label_country_residence": "Paese di residenza *",
         "placeholder_country_residence": "es. Italia, Australia, India",
         "label_city": "Città",

@@ -15,6 +15,43 @@
     <input type="text" id="hp_website" name="hp_website" tabindex="-1" autocomplete="off">
   </div>
 
+  {# Pre-screen gate. These three fields are the real, submitted eligibility
+     fields (not duplicates) -- they're just positioned first so the rest of
+     the form only reveals once one of them suggests a realistic pathway to
+     Italian eligibility. See the <script> below for the pass logic, and
+     app.py/logic.py for why nothing here is ever a hard server-side reject
+     -- an "Unsure" or descent-only answer still gets routed to manual staff
+     review rather than blocked, this gate is a front-of-form filter only. #}
+  <fieldset id="prescreen-fieldset">
+    <legend>{{ t('section_prescreen') }}</legend>
+    <p class="muted" style="margin-top:-8px;">{{ t('prescreen_intro') }}</p>
+
+    <label>{{ t('label_holds_passport') }}</label>
+    <select name="holds_italian_passport" id="gate_passport" required>
+      <option value="">{{ t('opt_select') }}</option>
+      <option value="Yes">{{ t('opt_yes') }}</option>
+      <option value="No">{{ t('opt_no') }}</option>
+      <option value="Applied">{{ t('opt_applied') }}</option>
+      <option value="Unsure">{{ t('opt_unsure') }}</option>
+    </select>
+
+    <label>{{ t('label_italian_parent') }}</label>
+    <select name="italian_parent_or_grandparent" id="gate_parent">
+      <option value="">{{ t('opt_select') }}</option>
+      <option value="Yes">{{ t('opt_yes') }}</option>
+      <option value="No">{{ t('opt_no') }}</option>
+      <option value="Unsure">{{ t('opt_unsure') }}</option>
+    </select>
+
+    <label>{{ t('label_years_resident_italy') }}</label>
+    <input type="text" name="years_resident_in_italy" id="gate_years">
+
+    <p id="prescreen-blocked" class="muted" style="display:none; color: var(--red); font-weight:600;">
+      {{ t('prescreen_blocked_body') }}
+    </p>
+  </fieldset>
+
+  <div id="full-form" style="display:none;">
   <fieldset>
     <legend>{{ t('section_about_you') }}</legend>
 
@@ -28,7 +65,7 @@
     <input type="tel" name="phone">
 
     <label>{{ t('label_dob') }}</label>
-    <input type="date" name="date_of_birth">
+    <input type="date" name="date_of_birth" required>
 
     <label>{{ t('label_country_residence') }}</label>
     <input type="text" name="country_of_residence" required placeholder="{{ t('placeholder_country_residence') }}">
@@ -104,26 +141,6 @@
     <label>{{ t('label_birthplace') }}</label>
     <input type="text" name="birthplace_country" required>
 
-    <label>{{ t('label_holds_passport') }}</label>
-    <select name="holds_italian_passport" required>
-      <option value="">{{ t('opt_select') }}</option>
-      <option value="Yes">{{ t('opt_yes') }}</option>
-      <option value="No">{{ t('opt_no') }}</option>
-      <option value="Applied">{{ t('opt_applied') }}</option>
-      <option value="Unsure">{{ t('opt_unsure') }}</option>
-    </select>
-
-    <label>{{ t('label_italian_parent') }}</label>
-    <select name="italian_parent_or_grandparent">
-      <option value="">{{ t('opt_select') }}</option>
-      <option value="Yes">{{ t('opt_yes') }}</option>
-      <option value="No">{{ t('opt_no') }}</option>
-      <option value="Unsure">{{ t('opt_unsure') }}</option>
-    </select>
-
-    <label>{{ t('label_years_resident_italy') }}</label>
-    <input type="text" name="years_resident_in_italy">
-
     <label>{{ t('label_current_citizenship') }}</label>
     <input type="text" name="current_citizenship">
 
@@ -159,5 +176,53 @@
   <div class="submit-row">
     <button type="submit">{{ t('btn_submit') }}</button>
   </div>
+  </div><!-- #full-form -->
 </form>
+
+<script>
+(function () {
+  var passport = document.getElementById('gate_passport');
+  var parent = document.getElementById('gate_parent');
+  var years = document.getElementById('gate_years');
+  var fullForm = document.getElementById('full-form');
+  var blocked = document.getElementById('prescreen-blocked');
+
+  // Pass conditions: passport held or applied for, an Italian parent/
+  // grandparent claimed, or 3+ years Italian residency. "Unsure" on the
+  // passport/descent questions still passes -- same reasoning logic.py
+  // uses to route Unsure to manual review rather than treating it as a no.
+  function passesGate() {
+    var p = passport.value;
+    var g = parent.value;
+    var y = parseInt(years.value, 10);
+    if (p === 'Yes' || p === 'Applied' || p === 'Unsure') return true;
+    if (g === 'Yes' || g === 'Unsure') return true;
+    if (!isNaN(y) && y >= 3) return true;
+    return false;
+  }
+
+  function evaluate() {
+    var touched = passport.value || parent.value || years.value.trim();
+    if (!touched) {
+      fullForm.style.display = 'none';
+      blocked.style.display = 'none';
+      return;
+    }
+    if (passesGate()) {
+      fullForm.style.display = '';
+      blocked.style.display = 'none';
+    } else {
+      fullForm.style.display = 'none';
+      blocked.style.display = '';
+    }
+  }
+
+  [passport, parent, years].forEach(function (el) {
+    el.addEventListener('change', evaluate);
+    el.addEventListener('input', evaluate);
+  });
+
+  evaluate();
+})();
+</script>
 {% endblock %}
