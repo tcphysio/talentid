@@ -17,9 +17,9 @@
       <span class="tag">{% block header_tag %}{{ t('tag_apply') }}{% endblock %}</span>
       {% block lang_toggle %}
       <div class="lang-toggle">
-        <a href="{{ url_for('set_language', lang_code='en') }}" class="{{ 'active' if lang == 'en' else '' }}">EN</a>
+        <a href="{{ url_for('set_language', lang_code='en') }}" class="{{ 'active' if lang == 'en' else '' }}"><span aria-hidden="true">🇬🇧</span> EN</a>
         <span>/</span>
-        <a href="{{ url_for('set_language', lang_code='it') }}" class="{{ 'active' if lang == 'it' else '' }}">IT</a>
+        <a href="{{ url_for('set_language', lang_code='it') }}" class="{{ 'active' if lang == 'it' else '' }}"><span aria-hidden="true">🇮🇹</span> IT</a>
       </div>
       {% endblock %}
     </div>

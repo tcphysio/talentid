@@ -50,6 +50,10 @@ TRANSLATIONS = {
             "welcome to come back and register then."
         ),
 
+        "hero_heading": "Join the Talent Pathway",
+        "step_eligibility": "Eligibility check",
+        "step_profile": "Your profile",
+
         "eligibility_intro": (
             "We ask these questions to understand potential eligibility to "
             "represent Italy. This does not determine eligibility on its "
@@ -184,6 +188,10 @@ TRANSLATIONS = {
             "passaporto va avanti, o diventi residente in Italia — sei il "
             "benvenuto a tornare e registrarti allora."
         ),
+
+        "hero_heading": "Entra nel Percorso Talenti",
+        "step_eligibility": "Verifica idoneità",
+        "step_profile": "Il tuo profilo",
 
         "eligibility_intro": (
             "Facciamo queste domande per comprendere la potenziale idoneità "

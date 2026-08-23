@@ -2,8 +2,22 @@
 {% block title %}{{ t('tag_apply') }} — FCRI{% endblock %}
 {% block wrap_class %}form-wrap{% endblock %}
 {% block content %}
-<div class="card">
-  <p class="muted">{{ t('apply_intro') | safe }}</p>
+<div class="hero-banner">
+  <img src="{{ url_for('static', filename='img/fcri-logo.png') }}" alt="" class="hero-crest" aria-hidden="true">
+  <div>
+    <h2>{{ t('hero_heading') }}</h2>
+    <p>{{ t('apply_intro') | safe }}</p>
+  </div>
+</div>
+
+<div class="step-indicator" id="step-indicator">
+  <div class="step active" id="step-1">
+    <span class="step-num">1</span> {{ t('step_eligibility') }}
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="step-2">
+    <span class="step-num">2</span> {{ t('step_profile') }}
+  </div>
 </div>
 
 <form method="post" class="card">
@@ -23,7 +37,10 @@
      -- an "Unsure" or descent-only answer still gets routed to manual staff
      review rather than blocked, this gate is a front-of-form filter only. #}
   <fieldset id="prescreen-fieldset">
-    <legend>{{ t('section_prescreen') }}</legend>
+    <legend>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+      {{ t('section_prescreen') }}
+    </legend>
     <p class="muted" style="margin-top:-8px;">{{ t('prescreen_intro') }}</p>
 
     <label>{{ t('label_holds_passport') }}</label>
@@ -53,7 +70,10 @@
 
   <div id="full-form" style="display:none;">
   <fieldset>
-    <legend>{{ t('section_about_you') }}</legend>
+    <legend>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>
+      {{ t('section_about_you') }}
+    </legend>
 
     <label>{{ t('label_full_name') }}</label>
     <input type="text" name="full_name" required>
@@ -75,7 +95,10 @@
   </fieldset>
 
   <fieldset>
-    <legend>{{ t('section_your_cricket') }}</legend>
+    <legend>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="18" r="2.5"/><path d="M9 15L18 6"/><path d="M16 4l4 4-2.5 2.5-4-4z"/></svg>
+      {{ t('section_your_cricket') }}
+    </legend>
 
     <label>{{ t('label_primary_role') }}</label>
     <select name="primary_role" required>
@@ -119,7 +142,10 @@
   </fieldset>
 
   <fieldset>
-    <legend>{{ t('section_evidence') }}</legend>
+    <legend>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="14" height="10" rx="2"/><path d="M17 10l4-2.5v9L17 14"/></svg>
+      {{ t('section_evidence') }}
+    </legend>
 
     <label>{{ t('label_scorecard_links') }} <span class="hint">{{ t('hint_scorecard_links') }}</span></label>
     <textarea name="scorecard_links"></textarea>
@@ -135,7 +161,10 @@
   </fieldset>
 
   <fieldset>
-    <legend>{{ t('section_eligibility') }}</legend>
+    <legend>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="2.5"/><path d="M8 17c0-2 2-3 4-3s4 1 4 3"/></svg>
+      {{ t('section_eligibility') }}
+    </legend>
     <p class="muted" style="margin-top:-8px;">{{ t('eligibility_intro') }}</p>
 
     <label>{{ t('label_birthplace') }}</label>
@@ -155,7 +184,10 @@
   </fieldset>
 
   <fieldset>
-    <legend>{{ t('section_nomination') }}</legend>
+    <legend>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 16-3-7-7-1z"/></svg>
+      {{ t('section_nomination') }}
+    </legend>
 
     <label>{{ t('label_nominated_by') }}</label>
     <select name="nominated_by" required>
@@ -186,6 +218,8 @@
   var years = document.getElementById('gate_years');
   var fullForm = document.getElementById('full-form');
   var blocked = document.getElementById('prescreen-blocked');
+  var step1 = document.getElementById('step-1');
+  var step2 = document.getElementById('step-2');
 
   // Pass conditions: passport held or applied for, an Italian parent/
   // grandparent claimed, or 3+ years Italian residency. "Unsure" on the
@@ -201,19 +235,28 @@
     return false;
   }
 
+  function setStep(passed) {
+    step1.classList.toggle('active', !passed);
+    step1.classList.toggle('done', passed);
+    step2.classList.toggle('active', passed);
+  }
+
   function evaluate() {
     var touched = passport.value || parent.value || years.value.trim();
     if (!touched) {
       fullForm.style.display = 'none';
       blocked.style.display = 'none';
+      setStep(false);
       return;
     }
     if (passesGate()) {
       fullForm.style.display = '';
       blocked.style.display = 'none';
+      setStep(true);
     } else {
       fullForm.style.display = 'none';
       blocked.style.display = '';
+      setStep(false);
     }
   }
 
