@@ -19,7 +19,11 @@ TRANSLATIONS = {
         "tag_apply": "Talent Pathway",
 
         "apply_intro": (
-            "Tell us about yourself and we'll be in touch. Fields marked "
+            "This is Federazione Cricket Italiana (FCRI)'s talent "
+            "identification programme — how we find and track prospective "
+            "players for Italian cricket, in Italy and overseas. It takes "
+            "a few minutes: a couple of quick eligibility questions first, "
+            "then a short profile of you and your cricket. Fields marked "
             "<strong>*</strong> are required — everything else helps us "
             "build a fuller picture but can be added later."
         ),
@@ -148,8 +152,13 @@ TRANSLATIONS = {
         "tag_apply": "Percorso Talenti",
 
         "apply_intro": (
-            "Raccontaci di te e ti ricontatteremo. I campi contrassegnati "
-            "con <strong>*</strong> sono obbligatori — tutti gli altri ci "
+            "Questo è il programma di identificazione dei talenti della "
+            "Federazione Cricket Italiana (FCRI) — il modo in cui "
+            "individuiamo e seguiamo i potenziali giocatori per il cricket "
+            "italiano, in Italia e all'estero. Richiede pochi minuti: prima "
+            "alcune rapide domande di idoneità, poi un breve profilo su di "
+            "te e sul tuo cricket. I campi contrassegnati con "
+            "<strong>*</strong> sono obbligatori — tutti gli altri ci "
             "aiutano a farci un'idea più completa, ma possono essere "
             "aggiunti in seguito."
         ),
