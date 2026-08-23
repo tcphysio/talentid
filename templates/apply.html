@@ -10,6 +10,26 @@
   </div>
 </div>
 
+<p class="photo-strip-label">{{ t('photo_strip_heading') }}</p>
+<div class="photo-strip">
+  <figure>
+    <img src="{{ url_for('static', filename='img/player-bowling-1.jpg') }}" alt="{{ t('photo_caption_bowling') }}" loading="lazy">
+    <figcaption>{{ t('photo_caption_bowling') }}</figcaption>
+  </figure>
+  <figure>
+    <img src="{{ url_for('static', filename='img/player-batting-2.jpg') }}" alt="{{ t('photo_caption_batting') }}" loading="lazy">
+    <figcaption>{{ t('photo_caption_batting') }}</figcaption>
+  </figure>
+  <figure>
+    <img src="{{ url_for('static', filename='img/womens-team.jpg') }}" alt="{{ t('photo_caption_women') }}" loading="lazy">
+    <figcaption>{{ t('photo_caption_women') }}</figcaption>
+  </figure>
+  <figure>
+    <img src="{{ url_for('static', filename='img/mens-winners.jpg') }}" alt="{{ t('photo_caption_winners') }}" loading="lazy">
+    <figcaption>{{ t('photo_caption_winners') }}</figcaption>
+  </figure>
+</div>
+
 <div class="step-indicator" id="step-indicator">
   <div class="step active" id="step-1">
     <span class="step-num">1</span> {{ t('step_eligibility') }}

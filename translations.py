@@ -54,6 +54,12 @@ TRANSLATIONS = {
         "step_eligibility": "Eligibility check",
         "step_profile": "Your profile",
 
+        "photo_strip_heading": "Federazione Cricket Italiana in action",
+        "photo_caption_bowling": "Men's national team",
+        "photo_caption_batting": "Men's national team",
+        "photo_caption_women": "Women's national team",
+        "photo_caption_winners": "ICC Challenge League B champions",
+
         "eligibility_intro": (
             "We ask these questions to understand potential eligibility to "
             "represent Italy. This does not determine eligibility on its "
@@ -192,6 +198,12 @@ TRANSLATIONS = {
         "hero_heading": "Entra nel Percorso Talenti",
         "step_eligibility": "Verifica idoneità",
         "step_profile": "Il tuo profilo",
+
+        "photo_strip_heading": "La Federazione Cricket Italiana in azione",
+        "photo_caption_bowling": "Nazionale maschile",
+        "photo_caption_batting": "Nazionale maschile",
+        "photo_caption_women": "Nazionale femminile",
+        "photo_caption_winners": "Campioni della ICC Challenge League B",
 
         "eligibility_intro": (
             "Facciamo queste domande per comprendere la potenziale idoneità "

@@ -345,6 +345,48 @@ a.row-link:hover { text-decoration: underline; }
   max-width: 60ch;
 }
 
+/* Photo strip (/apply) -- real match/team photos, cleared for use by FCRI */
+.photo-strip-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 8px 2px;
+  font-weight: 600;
+}
+
+.photo-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.photo-strip figure {
+  margin: 0;
+}
+
+.photo-strip img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid var(--gold);
+  display: block;
+  background: var(--grey-border);
+}
+
+.photo-strip figcaption {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 4px;
+}
+
+@media (max-width: 560px) {
+  .photo-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* Step indicator (/apply) */
 .step-indicator {
   display: flex;
