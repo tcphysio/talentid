@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Manage Staff — FCRI CRM{% endblock %}
+{% block header_tag %}Staff CRM Dashboard{% endblock %}
+{% block header_tagline %}Talent Identification{% endblock %}
+{% block lang_toggle %}
+<div class="lang-toggle">
+  <span>Logged in as <strong style="color:white;">{{ session.get('staff_display_name') }}</strong></span>
+  <span>&middot;</span>
+  <a href="{{ url_for('admin') }}">Dashboard</a>
+  <span>&middot;</span>
+  <a href="{{ url_for('logout') }}">Log out</a>
+</div>
+{% endblock %}
+{% block content %}
+
+<a class="back-link" href="{{ url_for('admin') }}">&larr; Back to dashboard</a>
+
+<div class="card">
+  <h3 style="margin-top:0;">Add a staff account</h3>
+  <form method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+    <div>
+      <label for="username" style="margin-top:0;">Username</label>
+      <input type="text" id="username" name="username" style="width:160px;" required>
+    </div>
+    <div>
+      <label for="display_name" style="margin-top:0;">Display name</label>
+      <input type="text" id="display_name" name="display_name" style="width:160px;" placeholder="optional">
+    </div>
+    <div>
+      <label for="password" style="margin-top:0;">Password</label>
+      <input type="password" id="password" name="password" style="width:160px;" required minlength="8">
+    </div>
+    <div style="padding-bottom:11px;">
+      <label style="display:flex;align-items:center;gap:6px;margin:0;font-weight:400;">
+        <input type="checkbox" name="is_admin" value="1" style="width:auto;"> Grant admin access
+      </label>
+    </div>
+    <div>
+      <button type="submit">Add account</button>
+    </div>
+  </form>
+  <p class="muted" style="margin-top:10px;">
+    Admin accounts can add, deactivate, and promote/demote other staff.
+    Regular accounts can use the CRM (view players, take actions, run
+    follow-ups) but can't touch other accounts.
+  </p>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">Staff accounts</h3>
+  <table>
+    <thead>
+      <tr><th>Username</th><th>Display name</th><th>Role</th><th>Status</th><th>Last login</th><th>Created</th><th colspan="2"></th></tr>
+    </thead>
+    <tbody>
+      {% for s in staff_members %}
+      <tr>
+        <td>{{ s.username }}</td>
+        <td>{{ s.display_name or '—' }}</td>
+        <td>
+          {% if s.is_admin %}<span class="pill hot">Admin</span>
+          {% else %}<span class="pill low">Staff</span>{% endif %}
+        </td>
+        <td>
+          {% if s.is_active %}<span class="pill eligible">Active</span>
+          {% else %}<span class="pill not-eligible">Inactive</span>{% endif %}
+        </td>
+        <td class="muted">{{ s.last_login_at or 'Never' }}</td>
+        <td class="muted">{{ s.created_at }}</td>
+        <td>
+          <form method="post" action="{{ url_for('toggle_staff_admin', staff_id=s.id) }}">
+            {% if s.is_admin %}
+            <button type="submit" class="secondary" style="padding:6px 12px;font-size:13px;">Remove admin</button>
+            {% else %}
+            <button type="submit" class="secondary" style="padding:6px 12px;font-size:13px;">Make admin</button>
+            {% endif %}
+          </form>
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('toggle_staff', staff_id=s.id) }}">
+            {% if s.is_active %}
+            <button type="submit" class="danger" style="padding:6px 12px;font-size:13px;">Deactivate</button>
+            {% else %}
+            <button type="submit" class="secondary" style="padding:6px 12px;font-size:13px;">Reactivate</button>
+            {% endif %}
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted" style="margin-top:12px;">
+    Only admin accounts can add, deactivate, or promote/demote staff.
+    Deactivating an account blocks future logins immediately but keeps its
+    history in the audit trail. The only active account, and the only
+    active admin account, can't be deactivated or demoted, so the
+    dashboard can never lock everyone out.
+  </p>
+</div>
+
+{% endblock %}

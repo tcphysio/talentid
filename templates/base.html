@@ -25,9 +25,9 @@
     </div>
   </header>
   <div class="wrap {% block wrap_class %}{% endblock %}">
-    {% with messages = get_flashed_messages() %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+        {% for category, m in messages %}<div class="flash{% if category == 'error' %} flash-error{% endif %}">{{ m }}</div>{% endfor %}
       {% endif %}
     {% endwith %}
     {% block content %}{% endblock %}

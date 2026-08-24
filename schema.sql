@@ -4,6 +4,8 @@
 DROP TABLE IF EXISTS players;
 DROP TABLE IF EXISTS follow_ups;
 DROP TABLE IF EXISTS review_actions;
+DROP TABLE IF EXISTS staff_logins;
+DROP TABLE IF EXISTS staff;
 
 CREATE TABLE players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,7 +76,8 @@ CREATE TABLE follow_ups (
     channel TEXT DEFAULT 'email',
     reason TEXT,             -- what was missing / why this reminder fired
     message_preview TEXT,
-    sent_status TEXT DEFAULT 'stubbed'  -- 'stubbed' in prototype; 'sent' once wired to real email
+    sent_status TEXT DEFAULT 'stubbed',  -- 'stubbed' in prototype; 'sent' once wired to real email
+    triggered_by TEXT        -- staff username, or 'cron' for the scheduled sweep
 );
 
 CREATE TABLE review_actions (
@@ -83,5 +86,28 @@ CREATE TABLE review_actions (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     action TEXT NOT NULL,    -- Contacted / Shortlisted / Rejected / Note
     note TEXT,
-    staff_name TEXT
+    staff_name TEXT,
+    staff_id INTEGER REFERENCES staff(id)
+);
+
+-- Per-staff login accounts, replacing the old single shared
+-- ADMIN_USERNAME/ADMIN_PASSWORD HTTP Basic Auth. On a brand-new database
+-- this table starts empty; db.py's _bootstrap_staff() seeds one account
+-- from those same env vars so the first deploy always has a working login.
+CREATE TABLE staff (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    display_name TEXT,
+    password_hash TEXT NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    is_admin INTEGER NOT NULL DEFAULT 0,  -- only admins can add/deactivate/promote staff
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_login_at TEXT
+);
+
+-- One row per successful login -- the audit trail of "who logged in when".
+CREATE TABLE staff_logins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    staff_id INTEGER NOT NULL REFERENCES staff(id),
+    logged_in_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

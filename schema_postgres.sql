@@ -90,6 +90,12 @@ CREATE TABLE IF NOT EXISTS follow_ups (
     sent_status TEXT DEFAULT 'stubbed'
 );
 
+-- Which staff member (or 'cron' for the scheduled sweep) triggered this
+-- follow-up. Added after follow_ups already existed in production, so it
+-- needs its own ADD COLUMN IF NOT EXISTS like aire_number/codice_fiscale
+-- above.
+ALTER TABLE follow_ups ADD COLUMN IF NOT EXISTS triggered_by TEXT;
+
 CREATE TABLE IF NOT EXISTS review_actions (
     id SERIAL PRIMARY KEY,
     player_id INTEGER NOT NULL REFERENCES players(id),
@@ -97,4 +103,40 @@ CREATE TABLE IF NOT EXISTS review_actions (
     action TEXT NOT NULL,
     note TEXT,
     staff_name TEXT
+);
+
+-- Which staff account performed this action -- staff_name (free text) is
+-- kept alongside for display/back-compat, but staff_id is the real link
+-- to the staff table now that logins are per-person.
+ALTER TABLE review_actions ADD COLUMN IF NOT EXISTS staff_id INTEGER;
+
+-- Per-staff login accounts, replacing the old single shared
+-- ADMIN_USERNAME/ADMIN_PASSWORD HTTP Basic Auth. See db.py's
+-- _bootstrap_staff() -- on first boot after this upgrade, if this table is
+-- still empty, one account is auto-created from those same env vars so an
+-- existing deployment never gets locked out.
+CREATE TABLE IF NOT EXISTS staff (
+    id SERIAL PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    display_name TEXT,
+    password_hash TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TEXT NOT NULL DEFAULT to_char(now(), 'YYYY-MM-DD HH24:MI:SS'),
+    last_login_at TEXT
+);
+
+-- Only admin accounts can add/deactivate/promote other staff -- everyone
+-- else gets the regular dashboard (view players, take actions, run
+-- follow-ups) but not /admin/staff. Added after `staff` already existed
+-- in production, so it needs its own ADD COLUMN IF NOT EXISTS like the
+-- other post-hoc columns above. The bootstrap account (see db.py's
+-- _bootstrap_staff()) is always granted admin so there's never a deployment
+-- with zero admins.
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;
+
+-- One row per successful login -- the audit trail of "who logged in when".
+CREATE TABLE IF NOT EXISTS staff_logins (
+    id SERIAL PRIMARY KEY,
+    staff_id INTEGER NOT NULL REFERENCES staff(id),
+    logged_in_at TEXT NOT NULL DEFAULT to_char(now(), 'YYYY-MM-DD HH24:MI:SS')
 );

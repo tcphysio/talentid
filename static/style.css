@@ -132,7 +132,7 @@ label .hint {
   font-size: 13px;
 }
 
-input[type=text], input[type=email], input[type=tel], input[type=date], select, textarea {
+input[type=text], input[type=email], input[type=tel], input[type=date], input[type=password], select, textarea {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--grey-border);
@@ -176,6 +176,12 @@ button.gold, .btn.gold { background: var(--gold); color: var(--navy); }
   border-radius: 6px;
   margin-bottom: 16px;
   font-size: 14px;
+}
+
+.flash-error {
+  background: #fde2e1;
+  border-color: var(--red);
+  color: #8a1d24;
 }
 
 /* Dashboard */

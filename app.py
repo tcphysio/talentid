@@ -16,6 +16,7 @@ from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, flash, Response, session, abort
 from datetime import datetime
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import get_conn, init_db
 import logic
@@ -53,31 +54,36 @@ def set_language(lang_code):
 # repeatedly -- init_db() only builds the schema if the DB file is missing.
 init_db()
 
-ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")  # required in production, see README
-
-
-def requires_admin_auth(view):
+def login_required(view):
     """
-    Gate every /admin route behind HTTP Basic Auth. ADMIN_PASSWORD must be
-    set via environment variable in any real deployment -- if it isn't set,
-    admin access is refused outright rather than silently left open, since
-    this dashboard shows player eligibility/passport/visa data.
+    Gate every /admin route behind a real per-staff session login (see
+    /admin/login below) instead of one shared HTTP Basic Auth password.
+    This is what makes "who did what" attribution possible -- actions and
+    follow-up sweeps get tagged with session["staff_id"], not a free-text
+    name anyone could type.
     """
     @wraps(view)
     def wrapped(*args, **kwargs):
-        if not ADMIN_PASSWORD:
-            return Response(
-                "Admin dashboard is not configured: set ADMIN_PASSWORD in your "
-                "deployment environment to enable staff access.",
-                503,
-            )
-        auth = request.authorization
-        if not auth or auth.username != ADMIN_USERNAME or auth.password != ADMIN_PASSWORD:
-            return Response(
-                "Authentication required", 401,
-                {"WWW-Authenticate": 'Basic realm="Cricket Italia Admin"'},
-            )
+        if not session.get("staff_id"):
+            return redirect(url_for("login", next=request.path))
+        return view(*args, **kwargs)
+    return wrapped
+
+
+def admin_required(view):
+    """
+    Stricter than login_required -- for staff-management routes only
+    (add/deactivate/promote accounts). Regular staff can use the CRM
+    (view players, take actions, run follow-ups) but can't touch other
+    people's accounts; only accounts with is_admin=True can.
+    """
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not session.get("staff_id"):
+            return redirect(url_for("login", next=request.path))
+        if not session.get("is_staff_admin"):
+            flash("Only admin accounts can manage staff.", "error")
+            return redirect(url_for("admin"))
         return view(*args, **kwargs)
     return wrapped
 
@@ -166,8 +172,160 @@ def thanks(player_id):
     return render_template("thanks.html", player=player)
 
 
+@app.route("/admin/login", methods=["GET", "POST"])
+def login():
+    conn = get_conn()
+    no_staff_configured = conn.execute("SELECT COUNT(*) AS n FROM staff").fetchone()["n"] == 0
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        staff = conn.execute("SELECT * FROM staff WHERE username = ?", (username,)).fetchone()
+
+        if staff and staff["is_active"] and check_password_hash(staff["password_hash"], password):
+            session["staff_id"] = staff["id"]
+            session["staff_username"] = staff["username"]
+            session["staff_display_name"] = staff["display_name"] or staff["username"]
+            session["is_staff_admin"] = bool(staff["is_admin"])
+            now = datetime.now().isoformat()
+            conn.execute("UPDATE staff SET last_login_at = ? WHERE id = ?", (now, staff["id"]))
+            conn.execute("INSERT INTO staff_logins (staff_id) VALUES (?)", (staff["id"],))
+            conn.commit()
+            conn.close()
+
+            # Only ever redirect back into /admin -- request.args is
+            # visitor-controlled, so without this check "next" could be
+            # turned into an open redirect to an attacker's site.
+            next_url = request.args.get("next", "")
+            if not next_url.startswith("/admin"):
+                next_url = url_for("admin")
+            return redirect(next_url)
+
+        conn.close()
+        flash("Incorrect username or password.", "error")
+        return render_template("login.html", no_staff_configured=no_staff_configured)
+
+    conn.close()
+    return render_template("login.html", no_staff_configured=no_staff_configured)
+
+
+@app.route("/admin/logout")
+def logout():
+    session.pop("staff_id", None)
+    session.pop("staff_username", None)
+    session.pop("staff_display_name", None)
+    session.pop("is_staff_admin", None)
+    return redirect(url_for("login"))
+
+
+@app.route("/admin/staff", methods=["GET", "POST"])
+@admin_required
+def staff_list():
+    conn = get_conn()
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        display_name = request.form.get("display_name", "").strip()
+        password = request.form.get("password", "")
+        is_admin = bool(request.form.get("is_admin"))
+
+        if not username or not password:
+            flash("Username and password are both required.", "error")
+        elif len(password) < 8:
+            flash("Password must be at least 8 characters.", "error")
+        elif conn.execute("SELECT id FROM staff WHERE username = ?", (username,)).fetchone():
+            flash(f"Username '{username}' is already taken.", "error")
+        else:
+            conn.execute(
+                "INSERT INTO staff (username, display_name, password_hash, is_active, is_admin) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (username, display_name or username, generate_password_hash(password), True, is_admin),
+            )
+            conn.commit()
+            flash(f"Added staff account: {username}")
+        conn.close()
+        return redirect(url_for("staff_list"))
+
+    staff_members = conn.execute("SELECT * FROM staff ORDER BY username").fetchall()
+    conn.close()
+    return render_template("staff.html", staff_members=staff_members)
+
+
+def _active_count(conn, admins_only=False):
+    if admins_only:
+        return conn.execute(
+            "SELECT COUNT(*) AS n FROM staff WHERE is_active = ? AND is_admin = ?", (True, True)
+        ).fetchone()["n"]
+    return conn.execute("SELECT COUNT(*) AS n FROM staff WHERE is_active = ?", (True,)).fetchone()["n"]
+
+
+@app.route("/admin/staff/<int:staff_id>/toggle", methods=["POST"])
+@admin_required
+def toggle_staff(staff_id):
+    conn = get_conn()
+    target = conn.execute("SELECT * FROM staff WHERE id = ?", (staff_id,)).fetchone()
+    if target is None:
+        conn.close()
+        abort(404)
+
+    if target["is_active"]:
+        # Never allow the last active account to deactivate itself (or be
+        # deactivated by someone else) -- that would lock every staff
+        # member out of the dashboard with no way back in short of a
+        # database edit. Separately, never allow the last active *admin*
+        # to be deactivated even if other non-admin staff remain active --
+        # otherwise no one left could manage staff at all.
+        if _active_count(conn) <= 1:
+            conn.close()
+            flash("Can't deactivate the only active staff account.", "error")
+            return redirect(url_for("staff_list"))
+        if target["is_admin"] and _active_count(conn, admins_only=True) <= 1:
+            conn.close()
+            flash("Can't deactivate the only active admin account.", "error")
+            return redirect(url_for("staff_list"))
+        conn.execute("UPDATE staff SET is_active = ? WHERE id = ?", (False, staff_id))
+        flash(f"Deactivated {target['username']}.")
+    else:
+        conn.execute("UPDATE staff SET is_active = ? WHERE id = ?", (True, staff_id))
+        flash(f"Reactivated {target['username']}.")
+
+    conn.commit()
+    conn.close()
+    return redirect(url_for("staff_list"))
+
+
+@app.route("/admin/staff/<int:staff_id>/toggle-admin", methods=["POST"])
+@admin_required
+def toggle_staff_admin(staff_id):
+    """Grant or remove admin rights (the ability to manage staff accounts)
+    on an existing account. Doesn't touch is_active."""
+    conn = get_conn()
+    target = conn.execute("SELECT * FROM staff WHERE id = ?", (staff_id,)).fetchone()
+    if target is None:
+        conn.close()
+        abort(404)
+
+    if target["is_admin"]:
+        # Never remove admin rights from the only active admin -- that
+        # would leave no one able to grant them back short of a database
+        # edit, even if other non-admin staff are still active.
+        if target["is_active"] and _active_count(conn, admins_only=True) <= 1:
+            conn.close()
+            flash("Can't remove admin rights from the only active admin account.", "error")
+            return redirect(url_for("staff_list"))
+        conn.execute("UPDATE staff SET is_admin = ? WHERE id = ?", (False, staff_id))
+        flash(f"Removed admin rights from {target['username']}.")
+    else:
+        conn.execute("UPDATE staff SET is_admin = ? WHERE id = ?", (True, staff_id))
+        flash(f"Granted admin rights to {target['username']}.")
+
+    conn.commit()
+    conn.close()
+    return redirect(url_for("staff_list"))
+
+
 @app.route("/admin")
-@requires_admin_auth
+@login_required
 def admin():
     conn = get_conn()
 
@@ -219,7 +377,7 @@ def admin():
 
 
 @app.route("/admin/player/<int:player_id>")
-@requires_admin_auth
+@login_required
 def player_detail(player_id):
     conn = get_conn()
     player = conn.execute("SELECT * FROM players WHERE id = ?", (player_id,)).fetchone()
@@ -237,16 +395,19 @@ def player_detail(player_id):
 
 
 @app.route("/admin/player/<int:player_id>/action", methods=["POST"])
-@requires_admin_auth
+@login_required
 def player_action(player_id):
     action = request.form.get("action")
     note = request.form.get("note", "")
-    staff_name = request.form.get("staff_name", "Staff")
+    # Attribution comes from the authenticated session now, not a free-text
+    # form field anyone could type any name into.
+    staff_name = session.get("staff_display_name", "Staff")
+    staff_id = session.get("staff_id")
 
     conn = get_conn()
     conn.execute(
-        "INSERT INTO review_actions (player_id, action, note, staff_name) VALUES (?, ?, ?, ?)",
-        (player_id, action, note, staff_name),
+        "INSERT INTO review_actions (player_id, action, note, staff_name, staff_id) VALUES (?, ?, ?, ?, ?)",
+        (player_id, action, note, staff_name, staff_id),
     )
     status_map = {"Contacted": "Contacted", "Shortlisted": "Shortlisted", "Rejected": "Rejected"}
     if action in status_map:
@@ -263,14 +424,17 @@ def player_action(player_id):
 FOLLOWUP_CRON_TOKEN = os.environ.get("FOLLOWUP_CRON_TOKEN")  # see README - Scheduling follow-ups
 
 
-def _run_follow_up_sweep() -> int:
+def _run_follow_up_sweep(triggered_by: str = "cron") -> int:
     """
     The actual sweep logic, shared by the manual admin button and the
     token-protected /cron endpoint below. Finds incomplete profiles whose
     next_follow_up_due has passed, logs a reminder, and advances the chase
     sequence. Sending is stubbed: it logs the drafted message rather than
     emailing it (see README - Turning the stub into real automation).
-    Returns the number of reminders logged.
+    `triggered_by` records who/what caused the sweep -- a staff username
+    for a manual click, or "cron" for the scheduled endpoint -- so the
+    follow-up history on each player's page shows where each reminder
+    actually came from. Returns the number of reminders logged.
     """
     conn = get_conn()
     today = datetime.now().strftime("%Y-%m-%d")
@@ -287,9 +451,9 @@ def _run_follow_up_sweep() -> int:
         message = logic.build_follow_up_message(player, missing)
 
         conn.execute(
-            "INSERT INTO follow_ups (player_id, channel, reason, message_preview, sent_status) "
-            "VALUES (?, 'email', ?, ?, 'stubbed')",
-            (player["id"], f"Missing: {', '.join(missing)}", message),
+            "INSERT INTO follow_ups (player_id, channel, reason, message_preview, sent_status, triggered_by) "
+            "VALUES (?, 'email', ?, ?, 'stubbed', ?)",
+            (player["id"], f"Missing: {', '.join(missing)}", message, triggered_by),
         )
 
         new_count = player["follow_up_count"] + 1
@@ -309,10 +473,10 @@ def _run_follow_up_sweep() -> int:
 
 
 @app.route("/admin/run-follow-ups")
-@requires_admin_auth
+@login_required
 def run_follow_ups():
     """Manual trigger for staff -- click the button in /admin."""
-    sent = _run_follow_up_sweep()
+    sent = _run_follow_up_sweep(triggered_by=session.get("staff_username", "staff"))
     flash(f"Follow-up sweep complete: {sent} reminder(s) logged.")
     return redirect(url_for("admin"))
 
@@ -323,8 +487,8 @@ def cron_run_follow_ups():
     Machine-triggered version of the same sweep, for an external scheduler
     (Render's free tier has no built-in cron) -- see README, "Scheduling
     follow-ups". Deliberately gated by its own FOLLOWUP_CRON_TOKEN rather
-    than ADMIN_PASSWORD, so a third-party scheduler config never needs to
-    hold the staff dashboard password. Requires ?token=... to match.
+    than a staff login, so a third-party scheduler config never needs to
+    hold anyone's staff password. Requires ?token=... to match.
     """
     if not FOLLOWUP_CRON_TOKEN:
         return Response(

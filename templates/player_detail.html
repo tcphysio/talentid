@@ -2,7 +2,17 @@
 {% block title %}{{ player.full_name }} — FCRI CRM{% endblock %}
 {% block header_tag %}Staff CRM Dashboard{% endblock %}
 {% block header_tagline %}Talent Identification{% endblock %}
-{% block lang_toggle %}{% endblock %}
+{% block lang_toggle %}
+<div class="lang-toggle">
+  <span>Logged in as <strong style="color:white;">{{ session.get('staff_display_name') }}</strong></span>
+  <span>&middot;</span>
+  {% if session.get('is_staff_admin') %}
+  <a href="{{ url_for('staff_list') }}">Manage staff</a>
+  <span>&middot;</span>
+  {% endif %}
+  <a href="{{ url_for('logout') }}">Log out</a>
+</div>
+{% endblock %}
 {% block content %}
 
 <a class="back-link" href="{{ url_for('admin') }}">&larr; Back to dashboard</a>
@@ -74,12 +84,12 @@
 <div class="card">
   <h3 style="margin-top:0;">Staff actions</h3>
   <form class="action-form" method="post" action="{{ url_for('player_action', player_id=player.id) }}">
-    <input type="text" name="staff_name" placeholder="Your name" style="width:140px;">
     <input type="text" name="note" placeholder="Note (optional)" style="width:260px;">
     <button type="submit" name="action" value="Contacted" class="secondary">Mark Contacted</button>
     <button type="submit" name="action" value="Shortlisted">Shortlist</button>
     <button type="submit" name="action" value="Rejected" class="danger">Reject</button>
   </form>
+  <p class="muted" style="margin-top:6px;">Recorded as {{ session.get('staff_display_name') }}.</p>
 
   {% if actions %}
   <table style="margin-top:16px;">
@@ -97,10 +107,10 @@
   <h3 style="margin-top:0;">Follow-up history</h3>
   {% if follow_ups %}
   <table>
-    <thead><tr><th>When</th><th>Channel</th><th>Reason</th><th>Message (stubbed)</th></tr></thead>
+    <thead><tr><th>When</th><th>Channel</th><th>Reason</th><th>Triggered by</th><th>Message (stubbed)</th></tr></thead>
     <tbody>
       {% for f in follow_ups %}
-      <tr><td>{{ f.created_at }}</td><td>{{ f.channel }}</td><td>{{ f.reason }}</td><td class="muted">{{ f.message_preview }}</td></tr>
+      <tr><td>{{ f.created_at }}</td><td>{{ f.channel }}</td><td>{{ f.reason }}</td><td>{{ f.triggered_by or '—' }}</td><td class="muted">{{ f.message_preview }}</td></tr>
       {% endfor %}
     </tbody>
   </table>

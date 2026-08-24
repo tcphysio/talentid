@@ -11,10 +11,13 @@ no-code platform. It is not deployed anywhere — see Deployment below.
 ## What's in the box
 
 - `/apply` — public intake form. Sent to players or partner clubs.
+- `/admin/login` — per-staff login (see "Staff logins & the audit trail"
+  below). Everything under `/admin` requires this.
 - `/admin` — staff dashboard: filter/sort every submission by status, priority
   tier, eligibility flag, location. Click through to a detail view.
 - `/admin/player/<id>` — full profile, follow-up history, and staff actions
-  (Mark Contacted / Shortlist / Reject).
+  (Mark Contacted / Shortlist / Reject), each attributed to whoever's logged in.
+- `/admin/staff` — add/deactivate/promote staff accounts (admins only).
 - `/admin/run-follow-ups` — runs the automated chase logic on demand (in
   production this would run on a schedule — see below).
 - `logic.py` — **all the business rules live here.** Level tiers, eligibility
@@ -99,6 +102,43 @@ Two things need connecting for this to run itself in production:
    SendGrid or similar if volume grows), and flip `sent_status` from
    `'stubbed'` to `'sent'`.
 
+## Staff logins & the audit trail
+
+`/admin` used to be gated by one shared HTTP Basic Auth password
+(`ADMIN_USERNAME`/`ADMIN_PASSWORD`). It's now per-staff accounts stored in
+the app's own database (a `staff` table, passwords hashed with werkzeug's
+`generate_password_hash` — never stored in plain text), with a real session
+login at `/admin/login`.
+
+**Upgrading an existing deployment:** nothing to do by hand. The first time
+the app boots after this change, if no staff accounts exist yet, one is
+auto-created from `ADMIN_USERNAME`/`ADMIN_PASSWORD` — the same env vars the
+old Basic Auth used — so an existing deployment's login keeps working
+without anyone getting locked out. That bootstrapped account is always an
+admin. Log in with those credentials, then add real per-person accounts.
+
+**Two account types:** admin accounts can add, deactivate, and promote or
+demote other staff, from `/admin/staff`. Regular staff accounts can use the
+CRM itself — view players, take actions, run follow-ups — but `/admin/staff`
+is off-limits to them. New accounts start as regular staff unless the admin
+adding them ticks "Grant admin access"; an existing account's role can be
+changed later from the same page.
+
+**Removing access:** deactivate the account from `/admin/staff` rather than
+deleting it — this blocks future logins immediately while keeping that
+person's history intact in the audit trail below. The only active account,
+and separately the only active admin account, can't be deactivated or
+demoted (by itself or anyone else) — so the dashboard can never end up with
+zero staff, or with staff but no one left who can manage accounts.
+
+**What gets tracked:** every login (`staff_logins` table), every Mark
+Contacted / Shortlist / Reject action on a player (`review_actions.staff_id`,
+shown on each player's page), and who or what triggered each follow-up
+sweep (`follow_ups.triggered_by` — a staff username for a manual click,
+`"cron"` for the scheduled endpoint). This is "who did what", not full
+page-view logging — opening a player's profile to look at it isn't logged,
+only actions taken on it.
+
 ## Scheduling follow-ups (external cron)
 
 Render's free tier has no built-in cron (that's a paid add-on there), so
@@ -106,9 +146,9 @@ the follow-up sweep needs an external scheduler to hit the app on a timer
 instead of a staff member clicking the button in `/admin` every day.
 
 `app.py` exposes `/cron/run-follow-ups?token=...` for exactly this — it's
-deliberately **not** behind `ADMIN_PASSWORD`, so a third-party scheduler's
-config never has to hold the staff dashboard password. It's gated by its
-own `FOLLOWUP_CRON_TOKEN` env var instead, which both `render-free.yaml`
+deliberately **not** behind a staff login, so a third-party scheduler's
+config never has to hold anyone's password. It's gated by its own
+`FOLLOWUP_CRON_TOKEN` env var instead, which both `render-free.yaml`
 and `render.yaml` now auto-generate a random value for on deploy.
 
 ### Steps
@@ -177,8 +217,10 @@ pre-configured as a Render Blueprint.
    (the blueprint file picker lets you choose, or rename/swap which file
    is called `render.yaml` in your repo if it doesn't offer a picker).
 6. **Paste in your Neon connection string** when Render prompts for
-   `DATABASE_URL`, and set `ADMIN_PASSWORD` to whatever you want staff to
-   log into `/admin` with.
+   `DATABASE_URL`, and set `ADMIN_PASSWORD` to whatever the first staff
+   login should be (username comes from `ADMIN_USERNAME`, `admin` by
+   default). Add real per-person logins later from `/admin/staff` — see
+   "Staff logins & the audit trail" above.
 7. **Deploy.** Live at `https://<your-service-name>.onrender.com/apply`
    once the build finishes (a couple of minutes).
 8. **Seed or don't seed demo data.** Render's free tier has no Shell tab
@@ -257,7 +299,9 @@ and are OK with ~$7.25/month.
    from app import app as application
    ```
    Replace `<your-username>`, the password, and the secret with your own
-   values — don't leave the placeholders in place.
+   values — don't leave the placeholders in place. These bootstrap the
+   first staff login only; add real per-person accounts afterwards from
+   `/admin/staff`.
 
 6. **(Optional) Static files mapping** — Web tab → Static files → add
    URL `/static/` mapped to
@@ -266,7 +310,7 @@ and are OK with ~$7.25/month.
 
 7. **Reload the web app** (green button, top of the Web tab). Your site is
    now live at `https://<your-username>.pythonanywhere.com/apply`, and the
-   staff dashboard at `.../admin` (behind the username/password from step 5).
+   staff dashboard at `.../admin` (behind the login bootstrapped from step 5).
 
 8. **Seed or don't seed demo data.** For a quick look with sample data,
    run `python seed.py` once in the Bash console (with the virtualenv
@@ -298,7 +342,9 @@ tier has the same filesystem-wipe problem as everything else's free tier).
 2. Create a Render account, connect GitHub.
 3. **New + → Blueprint**, point it at your repo — `render.yaml` configures
    everything automatically.
-4. Set `ADMIN_PASSWORD` when prompted (kept out of git on purpose).
+4. Set `ADMIN_PASSWORD` when prompted (kept out of git on purpose) — this
+   bootstraps the first staff login only; add real per-person accounts
+   afterwards from `/admin/staff`.
 5. Deploy. Live at `https://<your-service-name>.onrender.com/apply`.
 
 ## Deployment — Replit
@@ -324,7 +370,9 @@ database identifies itself; nothing else in the app needs to change.
 3. Set the same three env vars as the other hosts, via the Repl's
    **Secrets** tool (padlock icon in the sidebar) rather than a WSGI file
    this time:
-   - `ADMIN_USERNAME` → `admin` (or whatever you prefer)
+   - `ADMIN_USERNAME` → `admin` (or whatever you prefer) — bootstraps the
+     first staff login only; add real per-person accounts afterwards from
+     `/admin/staff`
    - `ADMIN_PASSWORD` → a real password
    - `SECRET_KEY` → any long random string
 4. Run `python seed.py` once from the Shell if you want the five sample
@@ -373,7 +421,6 @@ to the SQLite version.
   validated against real recruitment outcomes.
 - **Review threshold** (currently score ≥ 65 for "Ready for Review") — tune
   once staff can see how many submissions land in each tier.
-- **Who owns `/admin`** day to day — the dashboard is now password-gated
-  (HTTP Basic Auth via `ADMIN_PASSWORD`), but that's one shared login, not
-  per-staff accounts. Fine for a small team; worth revisiting if more than a
-  couple of people need access with individually revocable logins.
+- **Who owns `/admin`** day to day — now per-staff logins with two roles
+  (see "Staff logins & the audit trail" above): admin accounts can manage
+  other staff, regular accounts can't. Resolved.

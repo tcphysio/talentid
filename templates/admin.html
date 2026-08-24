@@ -2,7 +2,17 @@
 {% block title %}CRM Dashboard — FCRI{% endblock %}
 {% block header_tag %}Staff CRM Dashboard{% endblock %}
 {% block header_tagline %}Talent Identification{% endblock %}
-{% block lang_toggle %}{% endblock %}
+{% block lang_toggle %}
+<div class="lang-toggle">
+  <span>Logged in as <strong style="color:white;">{{ session.get('staff_display_name') }}</strong></span>
+  <span>&middot;</span>
+  {% if session.get('is_staff_admin') %}
+  <a href="{{ url_for('staff_list') }}">Manage staff</a>
+  <span>&middot;</span>
+  {% endif %}
+  <a href="{{ url_for('logout') }}">Log out</a>
+</div>
+{% endblock %}
 {% block content %}
 
 <div class="stat-row">
