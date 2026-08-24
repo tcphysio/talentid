@@ -101,6 +101,8 @@ CREATE TABLE staff (
     password_hash TEXT NOT NULL,
     is_active INTEGER NOT NULL DEFAULT 1,
     is_admin INTEGER NOT NULL DEFAULT 0,  -- only admins can add/deactivate/promote staff
+    failed_login_attempts INTEGER NOT NULL DEFAULT 0,  -- brute-force lockout, see app.py login()
+    locked_until TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     last_login_at TEXT
 );

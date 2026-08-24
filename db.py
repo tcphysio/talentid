@@ -113,11 +113,13 @@ _NEW_COLUMNS = {
     },
     "staff": {
         # Only present if a `staff` table already existed before the
-        # admin-role feature shipped (i.e. an upgrade from the very first
-        # per-staff-login release, before roles existed at all). A brand
-        # new `staff` table already gets this column from
+        # admin-role/lockout features shipped (i.e. an upgrade from an
+        # earlier per-staff-login release, before these existed at all). A
+        # brand new `staff` table already gets these columns from
         # _ensure_staff_tables/schema.sql, so this is a no-op there.
         "is_admin": "INTEGER NOT NULL DEFAULT 0",
+        "failed_login_attempts": "INTEGER NOT NULL DEFAULT 0",
+        "locked_until": "TEXT",
     },
 }
 
@@ -148,6 +150,8 @@ def _ensure_staff_tables(conn):
         "password_hash TEXT NOT NULL, "
         "is_active INTEGER NOT NULL DEFAULT 1, "
         "is_admin INTEGER NOT NULL DEFAULT 0, "
+        "failed_login_attempts INTEGER NOT NULL DEFAULT 0, "
+        "locked_until TEXT, "
         "created_at TEXT NOT NULL DEFAULT (datetime('now')), "
         "last_login_at TEXT)"
     )

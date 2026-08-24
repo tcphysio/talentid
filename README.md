@@ -139,6 +139,54 @@ sweep (`follow_ups.triggered_by` — a staff username for a manual click,
 page-view logging — opening a player's profile to look at it isn't logged,
 only actions taken on it.
 
+## Security hardening
+
+A few things worth knowing about how login and the admin area are locked down:
+
+**`SECRET_KEY` is required in production.** Flask uses this to sign session
+cookies — if it falls back to a default value, anyone who knows that default
+can forge a staff login session. The app now refuses to start with the
+fallback key if it looks like a real deployment (Render sets `RENDER=true`
+automatically, and any host with `DATABASE_URL` set counts too) — you'll get
+a clear `RuntimeError` at boot telling you to set `SECRET_KEY`, rather than a
+silently-insecure site. `render.yaml`/`render-free.yaml` already
+auto-generate one for new Render deployments; PythonAnywhere and Replit need
+it set by hand (see their sections above — both already document this).
+
+**Session cookies** are marked `HttpOnly` (JavaScript can't read them, so a
+stray XSS bug can't steal a session) and `SameSite=Lax` (blocks most
+cross-site request forgery vectors at the browser level) always, and `Secure`
+(browser refuses to send the cookie over plain HTTP) whenever the app detects
+a real deployment. If you're running behind HTTPS somewhere that isn't Render
+or Replit-with-`DATABASE_URL` (e.g. a reverse proxy in front of
+PythonAnywhere), set `FORCE_SECURE_COOKIES=1` to turn that flag on explicitly.
+
+**CSRF protection** on every state-changing form under `/admin` (login,
+add/deactivate/promote staff, player actions) — each form carries a
+per-session token, checked with a constant-time comparison before the
+request is allowed through. `/apply` (the public form) is deliberately left
+out of this, since it has no session to carry a token in.
+
+**Login lockout.** Five wrong passwords in a row locks that username out for
+15 minutes, even if the sixth attempt has the right password — this blocks
+brute-force password guessing. The counter resets on a successful login.
+Locking is per-account, not per-IP, so it can't be used to lock someone else
+out by deliberately failing their username — only that one account is
+affected, and it self-clears after 15 minutes either way.
+
+**A few smaller fixes:** the language-switcher redirect now checks that it's
+only ever redirecting back to this same site (an "open redirect" could
+otherwise be used to disguise a phishing link as coming from your domain);
+the `/cron/run-follow-ups` token check uses a constant-time comparison so it
+can't be guessed faster by timing how quickly the server says no; and the
+site now sends a small set of standard security headers
+(`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) that most
+modern browsers respect automatically.
+
+None of this requires any action on an existing deployment other than making
+sure `SECRET_KEY` is set (see above) — everything else applies automatically
+on the next deploy.
+
 ## Scheduling follow-ups (external cron)
 
 Render's free tier has no built-in cron (that's a paid add-on there), so

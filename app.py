@@ -12,10 +12,12 @@ See README.md for deployment notes and how to wire real email sending.
 """
 
 import os
+import secrets
 from functools import wraps
+from urllib.parse import urlparse
 
 from flask import Flask, render_template, request, redirect, url_for, flash, Response, session, abort
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import get_conn, init_db
@@ -23,7 +25,45 @@ import logic
 from translations import translate
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
+
+# RENDER is set automatically to "true" by Render on every service (see
+# render.com/docs/environment-variables); DATABASE_URL is the same signal
+# Replit uses. Either one means this is a real deployment, not someone's
+# local `python app.py` -- and a real deployment must never fall back to
+# the hardcoded dev key, because anyone who knows it could forge a session
+# cookie claiming to be a logged-in admin (is_staff_admin=True) with zero
+# other access. PythonAnywhere isn't covered by this check (no reliable
+# runtime signal), so its README section still spells out setting
+# SECRET_KEY by hand -- this is defense-in-depth for the other two paths,
+# not a replacement for setting it everywhere.
+_looks_like_real_deployment = os.environ.get("RENDER") == "true" or bool(os.environ.get("DATABASE_URL"))
+_secret_key = os.environ.get("SECRET_KEY")
+if not _secret_key:
+    if _looks_like_real_deployment:
+        raise RuntimeError(
+            "SECRET_KEY is not set. Refusing to start in what looks like a real "
+            "deployment (RENDER or DATABASE_URL is set) without it -- sessions, "
+            "including staff logins, would be forgeable by anyone who knows the "
+            "fallback dev key. Set SECRET_KEY in your deployment's environment "
+            "variables (render.yaml/render-free.yaml already auto-generate one "
+            "for new deployments via a Blueprint)."
+        )
+    _secret_key = "dev-only-change-me"  # fine for local `python app.py` testing only
+app.secret_key = _secret_key
+
+# Cookies are marked Secure (HTTPS-only) automatically in the same real
+# deployments detected above. Local `python app.py` testing over plain
+# http://127.0.0.1 is the one case this should stay off -- a real browser
+# won't store or send a Secure cookie over plain HTTP, which would silently
+# break local login testing. For other hosts serving over HTTPS
+# (PythonAnywhere, Replit) that aren't auto-detected, set
+# FORCE_SECURE_COOKIES=1 to get the same hardening explicitly.
+_secure_cookies = _looks_like_real_deployment or os.environ.get("FORCE_SECURE_COOKIES", "").lower() in ("1", "true", "yes")
+app.config.update(
+    SESSION_COOKIE_SECURE=_secure_cookies,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+)
 
 SUPPORTED_LANGUAGES = ("en", "it")
 
@@ -41,12 +81,58 @@ def t(key):
     return translate(key, session.get("lang", "en"))
 
 
+@app.template_global("csrf_token")
+def csrf_token():
+    """Per-session anti-CSRF token, generated on first use and reused for
+    the rest of the session. Every POST form under /admin embeds this via
+    <input type="hidden" name="csrf_token" ...>; _csrf_protect() below
+    checks it on submission. Without this, a page on another site could
+    auto-submit a hidden form to e.g. /admin/staff/<id>/toggle and, if a
+    staff member happened to have an active session, deactivate their
+    account with no interaction beyond loading that page."""
+    token = session.get("csrf_token")
+    if not token:
+        token = secrets.token_hex(16)
+        session["csrf_token"] = token
+    return token
+
+
+@app.before_request
+def _csrf_protect():
+    # Scoped to /admin rather than every POST: /apply is a public form with
+    # no session-based privilege to abuse (anyone can already submit it,
+    # logged in or not), so a CSRF token there wouldn't protect anything a
+    # visitor doesn't already have access to. Every /admin POST, though,
+    # acts on behalf of whichever staff session is attached to the request.
+    if request.method == "POST" and request.path.startswith("/admin"):
+        expected = session.get("csrf_token", "")
+        submitted = request.form.get("csrf_token", "")
+        if not expected or not secrets.compare_digest(submitted, expected):
+            abort(400, description="Your session expired or this form came from an untrusted source. Please refresh the page and try again.")
+
+
+@app.after_request
+def _security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    return response
+
+
 @app.route("/lang/<lang_code>")
 def set_language(lang_code):
     if lang_code in SUPPORTED_LANGUAGES:
         session["lang"] = lang_code
     # Send them back to wherever they were, falling back to the intake form.
-    return redirect(request.referrer or url_for("apply"))
+    # request.referrer reflects the visitor's browser, not something this
+    # app controls -- a page on another site could link straight to
+    # /lang/it, and blindly redirecting to whatever sent them here would
+    # send the visitor wherever that link's page said, i.e. an open
+    # redirect. Only follow it when it actually points back at this site.
+    referrer = request.referrer
+    if referrer and urlparse(referrer).netloc == urlparse(request.host_url).netloc:
+        return redirect(referrer)
+    return redirect(url_for("apply"))
 
 # Initialise the database on import (not just when run via `python app.py`),
 # so this also works under gunicorn/production servers that import the
@@ -172,6 +258,10 @@ def thanks(player_id):
     return render_template("thanks.html", player=player)
 
 
+LOGIN_MAX_ATTEMPTS = 5  # wrong passwords in a row before a lockout
+LOGIN_LOCKOUT_MINUTES = 15
+
+
 @app.route("/admin/login", methods=["GET", "POST"])
 def login():
     conn = get_conn()
@@ -181,14 +271,40 @@ def login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         staff = conn.execute("SELECT * FROM staff WHERE username = ?", (username,)).fetchone()
+        now = datetime.now()
+
+        # Brute-force protection: an account with too many wrong passwords
+        # in a row is locked out for a while, independent of whether this
+        # particular attempt would otherwise have succeeded (so a correct
+        # password submitted mid-lockout still doesn't let someone in --
+        # otherwise a password guessed on, say, the 6th try after 5
+        # lockout-triggering failures would work anyway, defeating the
+        # point).
+        locked = False
+        if staff and staff["locked_until"]:
+            try:
+                locked = datetime.fromisoformat(staff["locked_until"]) > now
+            except ValueError:
+                locked = False
+
+        if locked:
+            conn.close()
+            flash(
+                "Too many failed login attempts. Try again in a few minutes, "
+                "or contact another admin if you're locked out.",
+                "error",
+            )
+            return render_template("login.html", no_staff_configured=no_staff_configured)
 
         if staff and staff["is_active"] and check_password_hash(staff["password_hash"], password):
             session["staff_id"] = staff["id"]
             session["staff_username"] = staff["username"]
             session["staff_display_name"] = staff["display_name"] or staff["username"]
             session["is_staff_admin"] = bool(staff["is_admin"])
-            now = datetime.now().isoformat()
-            conn.execute("UPDATE staff SET last_login_at = ? WHERE id = ?", (now, staff["id"]))
+            conn.execute(
+                "UPDATE staff SET last_login_at = ?, failed_login_attempts = 0, locked_until = NULL WHERE id = ?",
+                (now.isoformat(), staff["id"]),
+            )
             conn.execute("INSERT INTO staff_logins (staff_id) VALUES (?)", (staff["id"],))
             conn.commit()
             conn.close()
@@ -201,6 +317,16 @@ def login():
                 next_url = url_for("admin")
             return redirect(next_url)
 
+        if staff:
+            attempts = (staff["failed_login_attempts"] or 0) + 1
+            lock_until = None
+            if attempts >= LOGIN_MAX_ATTEMPTS:
+                lock_until = (now + timedelta(minutes=LOGIN_LOCKOUT_MINUTES)).isoformat()
+            conn.execute(
+                "UPDATE staff SET failed_login_attempts = ?, locked_until = ? WHERE id = ?",
+                (attempts, lock_until, staff["id"]),
+            )
+            conn.commit()
         conn.close()
         flash("Incorrect username or password.", "error")
         return render_template("login.html", no_staff_configured=no_staff_configured)
@@ -496,7 +622,7 @@ def cron_run_follow_ups():
             "in your deployment environment to enable it.",
             503,
         )
-    if request.args.get("token") != FOLLOWUP_CRON_TOKEN:
+    if not secrets.compare_digest(request.args.get("token") or "", FOLLOWUP_CRON_TOKEN):
         return Response("Forbidden", 403)
 
     sent = _run_follow_up_sweep()

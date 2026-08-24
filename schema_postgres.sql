@@ -134,6 +134,14 @@ CREATE TABLE IF NOT EXISTS staff (
 -- with zero admins.
 ALTER TABLE staff ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;
 
+-- Brute-force protection on /admin/login: after LOGIN_MAX_ATTEMPTS wrong
+-- passwords in a row, the account is locked out until locked_until passes.
+-- Reset to 0/NULL on a successful login. Added after `staff` already
+-- existed in production, so these need their own ADD COLUMN IF NOT EXISTS
+-- too.
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS locked_until TEXT;
+
 -- One row per successful login -- the audit trail of "who logged in when".
 CREATE TABLE IF NOT EXISTS staff_logins (
     id SERIAL PRIMARY KEY,

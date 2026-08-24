@@ -18,6 +18,7 @@
 <div class="card">
   <h3 style="margin-top:0;">Add a staff account</h3>
   <form method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div>
       <label for="username" style="margin-top:0;">Username</label>
       <input type="text" id="username" name="username" style="width:160px;" required>
@@ -69,6 +70,7 @@
         <td class="muted">{{ s.created_at }}</td>
         <td>
           <form method="post" action="{{ url_for('toggle_staff_admin', staff_id=s.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if s.is_admin %}
             <button type="submit" class="secondary" style="padding:6px 12px;font-size:13px;">Remove admin</button>
             {% else %}
@@ -78,6 +80,7 @@
         </td>
         <td>
           <form method="post" action="{{ url_for('toggle_staff', staff_id=s.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if s.is_active %}
             <button type="submit" class="danger" style="padding:6px 12px;font-size:13px;">Deactivate</button>
             {% else %}
