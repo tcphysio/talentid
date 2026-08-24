@@ -63,7 +63,7 @@ CREATE TABLE players (
     score INTEGER DEFAULT 0,            -- 0-100
     priority_tier TEXT,                 -- Hot Lead / Warm / Needs More Info / Low Priority
 
-    status TEXT DEFAULT 'New',          -- New / Incomplete-Chasing / Complete / Ready for Review / Contacted / Shortlisted / Rejected / Stale
+    status TEXT DEFAULT 'New',          -- New / Incomplete-Chasing / Complete / Ready for Review / Contacted / Shortlisted / Rejected / Closed / Stale
 
     follow_up_count INTEGER DEFAULT 0,
     next_follow_up_due TEXT

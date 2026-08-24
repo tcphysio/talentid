@@ -137,10 +137,13 @@ def compute_priority_tier(score: int, completeness_pct: int) -> str:
 def compute_status(completeness_pct: int, score: int, current_status: str) -> str:
     """
     Status is mostly derived, but preserves manual staff decisions
-    (Contacted / Shortlisted / Rejected) once set -- the automation
-    should never overwrite a human's call.
+    (Contacted / Shortlisted / Rejected / Closed) once set -- the
+    automation should never overwrite a human's call. "Closed" is for
+    anything that doesn't need chasing but isn't a straight rejection --
+    a duplicate entry, a test/validation submission, a player who's
+    withdrawn, someone not being pursued right now but not turned away.
     """
-    if current_status in ("Contacted", "Shortlisted", "Rejected", "Stale"):
+    if current_status in ("Contacted", "Shortlisted", "Rejected", "Closed", "Stale"):
         return current_status
     if completeness_pct < 100:
         return "Incomplete-Chasing"

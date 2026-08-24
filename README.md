@@ -75,8 +75,14 @@ because they haven't filled the form in yet. Complete profiles split into
 
 **Status and human override.** Status is computed automatically
 (`New` → `Incomplete-Chasing` → `Complete`/`Ready for Review`) *until* a staff
-member takes an action (Contacted / Shortlisted / Rejected). From that point
-the automation never overwrites the human decision — it's a one-way handoff.
+member takes an action (Contacted / Shortlisted / Rejected / Closed). From
+that point the automation never overwrites the human decision — it's a
+one-way handoff. `Closed` is for anything that needs to stop being chased
+but isn't a straight rejection — a duplicate entry, a test/validation
+submission, a withdrawn applicant, someone not being pursued right now.
+Any of the four actions removes a profile from the follow-up queue for good
+(see "Follow-up chasing" below) — the note field on the player page is the
+place to record why.
 
 **Follow-up chasing.** Incomplete profiles get reminders on a 3/7/14-day
 cadence (`FOLLOW_UP_CADENCE_DAYS`). After three reminders with no update, a

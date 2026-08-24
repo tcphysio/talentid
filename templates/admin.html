@@ -30,7 +30,7 @@
       <label>Status</label>
       <select name="status" onchange="this.form.submit()">
         <option value="">All</option>
-        {% for s in ['New','Incomplete-Chasing','Complete','Ready for Review','Contacted','Shortlisted','Rejected','Stale'] %}
+        {% for s in ['New','Incomplete-Chasing','Complete','Ready for Review','Contacted','Shortlisted','Rejected','Closed','Stale'] %}
         <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>
         {% endfor %}
       </select>

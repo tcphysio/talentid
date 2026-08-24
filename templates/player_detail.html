@@ -89,8 +89,14 @@
     <button type="submit" name="action" value="Contacted" class="secondary">Mark Contacted</button>
     <button type="submit" name="action" value="Shortlisted">Shortlist</button>
     <button type="submit" name="action" value="Rejected" class="danger">Reject</button>
+    <button type="submit" name="action" value="Closed" class="secondary">Close case</button>
   </form>
-  <p class="muted" style="margin-top:6px;">Recorded as {{ session.get('staff_display_name') }}.</p>
+  <p class="muted" style="margin-top:6px;">
+    Recorded as {{ session.get('staff_display_name') }}. Use <strong>Close case</strong>
+    for anything that doesn't need chasing but isn't a rejection &mdash; a
+    duplicate entry, a test/validation submission, a withdrawn applicant,
+    or someone you're not pursuing right now. Add a note above to say why.
+  </p>
 
   {% if actions %}
   <table style="margin-top:16px;">

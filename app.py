@@ -535,7 +535,12 @@ def player_action(player_id):
         "INSERT INTO review_actions (player_id, action, note, staff_name, staff_id) VALUES (?, ?, ?, ?, ?)",
         (player_id, action, note, staff_name, staff_id),
     )
-    status_map = {"Contacted": "Contacted", "Shortlisted": "Shortlisted", "Rejected": "Rejected"}
+    status_map = {
+        "Contacted": "Contacted",
+        "Shortlisted": "Shortlisted",
+        "Rejected": "Rejected",
+        "Closed": "Closed",
+    }
     if action in status_map:
         conn.execute(
             "UPDATE players SET status = ?, last_updated_at = ? WHERE id = ?",
