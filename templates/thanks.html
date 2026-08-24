@@ -14,5 +14,6 @@
   {% endif %}
 
   <p class="muted">{{ t('thanks_reference').format(id=player.id) }}</p>
+  <p class="muted"><a href="{{ url_for('disclaimer') }}">{{ t('disclaimer_link_text') }}</a></p>
 </div>
 {% endblock %}

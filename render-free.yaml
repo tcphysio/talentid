@@ -31,3 +31,5 @@ services:
         sync: false
       - key: FOLLOWUP_CRON_TOKEN
         generateValue: true
+      - key: CONTACT_EMAIL
+        value: info@example.org  # shown on the Eligibility & Data Notice page -- change to FCRI's real contact address

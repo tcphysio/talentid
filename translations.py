@@ -160,6 +160,42 @@ TRANSLATIONS = {
             "current needs."
         ),
         "thanks_reference": "Reference ID: #{id}",
+
+        "disclaimer_link_text": "Eligibility & Data Notice",
+        "apply_disclaimer_note": "By submitting this form, you acknowledge our",
+        "disclaimer_page_title": "Eligibility & Data Notice",
+        "disclaimer_heading": "Eligibility & Data Notice",
+        "disclaimer_not_guarantee_heading": "This is not a determination of eligibility",
+        "disclaimer_not_guarantee_body": (
+            "This form is an intake and triage tool used by Federazione Cricket "
+            "Italiana (FCRI) to collect information from prospective players and "
+            "organise registrations for internal review. Submitting this form, "
+            "or any information provided in it, does not constitute a "
+            "determination, confirmation, or guarantee of eligibility to "
+            "represent Italy in international cricket. Eligibility — including "
+            "matters of citizenship, residency, and any other applicable "
+            "criteria — is determined solely by FCRI and/or the relevant "
+            "sporting and governmental authorities, based on their own review "
+            "of official documentation and applicable rules. A registration "
+            "being accepted, marked complete, or passed on for review does not "
+            "imply that eligibility has been assessed or confirmed."
+        ),
+        "disclaimer_data_heading": "How your information is used",
+        "disclaimer_data_body": (
+            "Information submitted through this form is stored securely and "
+            "used solely to process your registration, contact you about it, "
+            "and support FCRI staff in reviewing and following up on "
+            "applications. Access is restricted to authorised FCRI staff. "
+            "Your information is not sold, published, or shared with any "
+            "third party outside this purpose."
+        ),
+        "disclaimer_contact_heading": "Questions or requests",
+        "disclaimer_contact_body": (
+            "If you have questions about this notice, or about the "
+            "information you've submitted, contact Federazione Cricket "
+            "Italiana at {email}."
+        ),
+        "disclaimer_back_link": "Back",
     },
 
     "it": {
@@ -311,6 +347,46 @@ TRANSLATIONS = {
             "sarà una corrispondenza con le nostre esigenze attuali."
         ),
         "thanks_reference": "ID di riferimento: #{id}",
+
+        "disclaimer_link_text": "Informativa su Idoneità e Dati",
+        "apply_disclaimer_note": "Inviando questo modulo, prendi atto della nostra",
+        "disclaimer_page_title": "Informativa su Idoneità e Dati",
+        "disclaimer_heading": "Informativa su Idoneità e Dati",
+        "disclaimer_not_guarantee_heading": "Questo non è un accertamento di idoneità",
+        "disclaimer_not_guarantee_body": (
+            "Questo modulo è uno strumento di raccolta e smistamento "
+            "utilizzato dalla Federazione Cricket Italiana (FCRI) per "
+            "raccogliere informazioni dai potenziali giocatori e organizzare "
+            "le registrazioni ai fini della revisione interna. L'invio di "
+            "questo modulo, o di qualsiasi informazione in esso fornita, non "
+            "costituisce un accertamento, una conferma o una garanzia di "
+            "idoneità a rappresentare l'Italia nel cricket internazionale. "
+            "L'idoneità — comprese le questioni di cittadinanza, residenza e "
+            "qualsiasi altro criterio applicabile — è determinata "
+            "esclusivamente dalla FCRI e/o dalle autorità sportive e "
+            "governative competenti, sulla base della loro valutazione della "
+            "documentazione ufficiale e delle norme applicabili. L'accettazione "
+            "di una registrazione, il suo completamento o il suo passaggio "
+            "alla fase di revisione non implicano che l'idoneità sia stata "
+            "valutata o confermata."
+        ),
+        "disclaimer_data_heading": "Come vengono utilizzate le tue informazioni",
+        "disclaimer_data_body": (
+            "Le informazioni inviate tramite questo modulo sono conservate in "
+            "modo sicuro e utilizzate esclusivamente per elaborare la tua "
+            "registrazione, contattarti al riguardo e supportare lo staff "
+            "della FCRI nella revisione e nel follow-up delle candidature. "
+            "L'accesso è riservato al personale autorizzato della FCRI. Le "
+            "tue informazioni non vengono vendute, pubblicate o condivise con "
+            "terzi al di fuori di questa finalità."
+        ),
+        "disclaimer_contact_heading": "Domande o richieste",
+        "disclaimer_contact_body": (
+            "Per domande su questa informativa, o sulle informazioni che hai "
+            "inviato, contatta la Federazione Cricket Italiana all'indirizzo "
+            "{email}."
+        ),
+        "disclaimer_back_link": "Indietro",
     },
 }
 

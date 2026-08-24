@@ -27,9 +27,12 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
 SUPPORTED_LANGUAGES = ("en", "it")
 
 
+CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "info@example.org")  # shown on the disclaimer page -- set a real FCRI address in your deployment env
+
+
 @app.context_processor
 def inject_lang():
-    return dict(lang=session.get("lang", "en"))
+    return dict(lang=session.get("lang", "en"), contact_email=CONTACT_EMAIL)
 
 
 @app.template_global("t")
@@ -144,6 +147,11 @@ def apply():
         return redirect(url_for("thanks", player_id=player_id))
 
     return render_template("apply.html")
+
+
+@app.route("/disclaimer")
+def disclaimer():
+    return render_template("disclaimer.html")
 
 
 @app.route("/thanks/<int:player_id>")

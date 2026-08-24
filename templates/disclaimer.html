@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ t('disclaimer_page_title') }} — FCRI{% endblock %}
+{% block wrap_class %}form-wrap{% endblock %}
+{% block content %}
+
+<a class="back-link" href="{{ request.referrer or url_for('apply') }}">&larr; {{ t('disclaimer_back_link') }}</a>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ t('disclaimer_heading') }}</h2>
+
+  <h3 style="margin-bottom:4px;">{{ t('disclaimer_not_guarantee_heading') }}</h3>
+  <p>{{ t('disclaimer_not_guarantee_body') }}</p>
+
+  <h3 style="margin-bottom:4px;">{{ t('disclaimer_data_heading') }}</h3>
+  <p>{{ t('disclaimer_data_body') }}</p>
+
+  <h3 style="margin-bottom:4px;">{{ t('disclaimer_contact_heading') }}</h3>
+  <p>{{ t('disclaimer_contact_body').format(email=contact_email) }}</p>
+</div>
+
+{% endblock %}
