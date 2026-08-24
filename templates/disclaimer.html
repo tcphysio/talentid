@@ -3,7 +3,13 @@
 {% block wrap_class %}form-wrap{% endblock %}
 {% block content %}
 
-<a class="back-link" href="{{ request.referrer or url_for('apply') }}">&larr; {{ t('disclaimer_back_link') }}</a>
+{# Real browser back-navigation, not a fresh page load: history.back()
+   returns to the exact page the visitor was on -- including whatever
+   they'd already typed into the form -- which a server-guessed referrer
+   URL can't do (that always loads a blank copy of the page). Falls back
+   to a plain link to /apply if this is the only page in the tab's history
+   (e.g. opened directly, or via target=_blank with nothing to go back to). #}
+<a class="back-link" href="{{ url_for('apply') }}" onclick="if (window.history.length > 1) { history.back(); return false; }">&larr; {{ t('disclaimer_back_link') }}</a>
 
 <div class="card">
   <h2 style="margin-top:0;">{{ t('disclaimer_heading') }}</h2>
