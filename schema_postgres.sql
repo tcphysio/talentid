@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS players (
     italian_parent_or_grandparent TEXT,
     years_resident_in_italy TEXT,
     current_citizenship TEXT,
+    aire_number TEXT,
+    codice_fiscale TEXT,
     visa_status TEXT,
 
     -- Nomination source
@@ -68,6 +70,15 @@ CREATE TABLE IF NOT EXISTS players (
     follow_up_count INTEGER DEFAULT 0,
     next_follow_up_due TEXT
 );
+
+-- Columns added after the table already existed in production need their
+-- own statement -- CREATE TABLE IF NOT EXISTS above is a no-op once the
+-- table exists, so a brand-new column in that block alone would silently
+-- never reach the live Neon database. ADD COLUMN IF NOT EXISTS (Postgres
+-- 9.6+) is safe to run on every app boot: no-op if the column is already
+-- there, never touches existing data otherwise.
+ALTER TABLE players ADD COLUMN IF NOT EXISTS aire_number TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS codice_fiscale TEXT;
 
 CREATE TABLE IF NOT EXISTS follow_ups (
     id SERIAL PRIMARY KEY,

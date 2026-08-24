@@ -48,6 +48,8 @@
       <div class="v">Italian passport: {{ player.holds_italian_passport }} &middot; Italian parent/grandparent: {{ player.italian_parent_or_grandparent or '—' }}</div>
       <div class="k">Birthplace / residency</div>
       <div class="v">{{ player.birthplace_country }} &middot; {{ player.years_resident_in_italy or '0' }} yrs in Italy</div>
+      <div class="k">AIRE / Codice Fiscale</div>
+      <div class="v">AIRE: {{ player.aire_number or '—' }} &middot; Has Codice Fiscale: {{ player.codice_fiscale or '—' }}</div>
       <div class="k">Visa status</div>
       <div class="v">{{ player.visa_status or '—' }}</div>
     </div>

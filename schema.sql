@@ -38,6 +38,8 @@ CREATE TABLE players (
     italian_parent_or_grandparent TEXT, -- Yes / No / Unsure
     years_resident_in_italy TEXT,
     current_citizenship TEXT,
+    aire_number TEXT,                   -- AIRE registration number (Registry of Italians Residing Abroad), if any
+    codice_fiscale TEXT,                -- Italian tax identification number, if any
     visa_status TEXT,                   -- EU/Italian citizen, Non-EU - visa required, Non-EU - visa held, N/A
 
     -- Nomination source

@@ -193,6 +193,17 @@
     <label>{{ t('label_current_citizenship') }}</label>
     <input type="text" name="current_citizenship">
 
+    <label>{{ t('label_aire_number') }} <span class="hint">{{ t('hint_aire_number') }}</span></label>
+    <input type="text" name="aire_number">
+
+    <label>{{ t('label_codice_fiscale') }} <span class="hint">{{ t('hint_codice_fiscale') }}</span></label>
+    <select name="codice_fiscale">
+      <option value="">{{ t('opt_select') }}</option>
+      <option value="Yes">{{ t('opt_yes') }}</option>
+      <option value="No">{{ t('opt_no') }}</option>
+      <option value="Unsure">{{ t('opt_unsure') }}</option>
+    </select>
+
     <label>{{ t('label_visa_status') }} <span class="hint">{{ t('hint_visa_status') }}</span></label>
     <select name="visa_status">
       <option value="">{{ t('opt_select') }}</option>

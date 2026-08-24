@@ -83,6 +83,25 @@ def get_conn():
     return conn
 
 
+# Columns added to players after some SQLite databases already existed
+# locally. schema.sql only runs for a brand-new file (see init_db below),
+# so an existing local dev database needs its own migration path too --
+# mirrors the ALTER TABLE ... ADD COLUMN IF NOT EXISTS approach in
+# schema_postgres.sql for the live Postgres database. Never drops or
+# rewrites anything.
+_NEW_COLUMNS = {
+    "aire_number": "TEXT",
+    "codice_fiscale": "TEXT",
+}
+
+
+def _migrate_sqlite_columns(conn):
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(players)").fetchall()}
+    for col, coltype in _NEW_COLUMNS.items():
+        if col not in existing:
+            conn.execute(f"ALTER TABLE players ADD COLUMN {col} {coltype}")
+
+
 def init_db(reset: bool = False):
     """
     Ensure the schema exists. Safe to call on every app start/reload.
@@ -91,7 +110,8 @@ def init_db(reset: bool = False):
     ever uses CREATE TABLE IF NOT EXISTS, never DROP) -- `reset` is ignored
     there on purpose, so a stray reset=True can never wipe real production
     data. On SQLite, `reset` (or a missing DB file) runs schema.sql fresh,
-    same as before.
+    same as before; an existing SQLite file instead goes through
+    _migrate_sqlite_columns() to pick up any new columns without a reset.
     """
     if USE_POSTGRES:
         conn = get_conn()
@@ -106,5 +126,10 @@ def init_db(reset: bool = False):
         conn = get_conn()
         with open(SCHEMA_PATH_SQLITE) as f:
             conn.executescript(f.read())
+        conn.commit()
+        conn.close()
+    else:
+        conn = get_conn()
+        _migrate_sqlite_columns(conn)
         conn.commit()
         conn.close()

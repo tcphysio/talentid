@@ -14,7 +14,7 @@ See README.md for deployment notes and how to wire real email sending.
 import os
 from functools import wraps
 
-from flask import Flask, render_template, request, redirect, url_for, flash, Response, session
+from flask import Flask, render_template, request, redirect, url_for, flash, Response, session, abort
 from datetime import datetime
 
 from db import get_conn, init_db
@@ -85,7 +85,7 @@ FORM_FIELDS = [
     "highest_level_played", "years_playing", "representative_honours",
     "scorecard_links", "video_links", "referee_name", "referee_contact",
     "birthplace_country", "holds_italian_passport", "italian_parent_or_grandparent",
-    "years_resident_in_italy", "current_citizenship", "visa_status",
+    "years_resident_in_italy", "current_citizenship", "aire_number", "codice_fiscale", "visa_status",
     "nominated_by", "nominator_name", "nominator_contact",
 ]
 
@@ -130,6 +130,17 @@ def apply():
             conn.commit()
 
         conn.close()
+
+        # Record that *this browser* legitimately created this player_id,
+        # so the /thanks page below can't be browsed by anyone who just
+        # increments the number in the URL (player_id is a small sequential
+        # int -- without this, /thanks/1, /thanks/2, ... would let a
+        # stranger enumerate every applicant's name with no login at all).
+        # A list, not a single value, because a club/coach/federation
+        # nominator can legitimately submit more than one player from the
+        # same browser session.
+        session.setdefault("own_player_ids", []).append(player_id)
+
         return redirect(url_for("thanks", player_id=player_id))
 
     return render_template("apply.html")
@@ -137,9 +148,13 @@ def apply():
 
 @app.route("/thanks/<int:player_id>")
 def thanks(player_id):
+    if player_id not in session.get("own_player_ids", []):
+        abort(404)
     conn = get_conn()
     player = conn.execute("SELECT * FROM players WHERE id = ?", (player_id,)).fetchone()
     conn.close()
+    if player is None:
+        abort(404)
     return render_template("thanks.html", player=player)
 
 
@@ -317,4 +332,10 @@ def cron_run_follow_ups():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    # debug=True would enable Werkzeug's interactive debugger -- effectively
+    # remote code execution if this ever ended up reachable on a public
+    # host instead of behind gunicorn (which never runs this block at all).
+    # Not currently reachable in production (Procfile/render*.yaml use
+    # `gunicorn app:app`), but a landmine not worth leaving in regardless.
+    debug_mode = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true", "yes")
+    app.run(debug=debug_mode, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

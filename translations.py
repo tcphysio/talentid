@@ -119,6 +119,11 @@ TRANSLATIONS = {
         "label_years_resident_italy": "Years resident in Italy (if any)",
         "label_current_citizenship": "Current citizenship(s)",
 
+        "label_aire_number": "AIRE number",
+        "hint_aire_number": "(Registry of Italians Residing Abroad — if registered)",
+        "label_codice_fiscale": "Do you have a Codice Fiscale?",
+        "hint_codice_fiscale": "(Italian tax identification number — we just need to know if you have one, not the number itself)",
+
         "label_visa_status": "Visa status",
         "hint_visa_status": "(if applicable, e.g. relocating for cricket)",
         "opt_visa_eu": "EU/Italian citizen",
@@ -263,6 +268,11 @@ TRANSLATIONS = {
         "label_italian_parent": "Hai un genitore o un nonno italiano?",
         "label_years_resident_italy": "Anni di residenza in Italia (se applicabile)",
         "label_current_citizenship": "Cittadinanza/e attuale/i",
+
+        "label_aire_number": "Numero AIRE",
+        "hint_aire_number": "(Anagrafe degli Italiani Residenti all'Estero — se iscritto/a)",
+        "label_codice_fiscale": "Hai un Codice Fiscale?",
+        "hint_codice_fiscale": "(ci serve solo sapere se ne hai uno, non il codice stesso)",
 
         "label_visa_status": "Stato del visto",
         "hint_visa_status": "(se applicabile, es. trasferimento per il cricket)",
