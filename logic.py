@@ -117,17 +117,27 @@ def compute_eligibility_flag(player: dict) -> str:
     return "Needs Manual Check"
 
 
-def compute_score(player: dict, completeness_pct: int) -> int:
+ELIGIBILITY_FLAGS = (
+    "Confirmed Eligible", "Likely Eligible", "Needs Manual Check", "Not Eligible (as stated)",
+)
+
+
+def compute_score(player: dict, completeness_pct: int, eligibility_flag: str = None) -> int:
     """
     0-100 composite score. Weights are a starting point, not gospel --
     the highest-leverage tuning knob in this whole system. Adjust once
     real submissions start coming in and staff can see which factors
     actually predict a good follow-up.
+
+    eligibility_flag: pass the already-decided effective flag (which may
+    be a staff override -- see evaluate_player()) so the score matches
+    what's actually displayed. Omit to have it computed fresh from the
+    player's raw answers, same as before.
     """
     level = player.get("highest_level_played") or ""
     level_score = LEVEL_SCORE.get(level, 0)  # up to 80
 
-    eligibility = compute_eligibility_flag(player)
+    eligibility = eligibility_flag if eligibility_flag is not None else compute_eligibility_flag(player)
     eligibility_score = {
         "Confirmed Eligible": 15,
         "Likely Eligible": 10,
@@ -189,12 +199,25 @@ def evaluate_player(player: dict) -> dict:
     Run the full rules pipeline on a player record (dict) and return the
     computed fields to persist. This is the single entry point the app
     should call any time a player record is created or updated.
+
+    Respects a staff eligibility override (player["eligibility_flag_override"])
+    the same way compute_status() respects a staff status decision above:
+    if staff have set one, it wins over the automatic answer for both the
+    displayed eligibility_flag and the score, and survives a re-run of this
+    function (e.g. from recompute_scores.py) instead of being silently
+    recalculated away. The automatic answer is still tracked separately
+    (eligibility_flag_auto) so an override never destroys what the rules
+    alone would have said.
     """
     completeness_pct, missing = compute_completeness(player)
     level_tier = compute_level_tier(player)
     location_bucket = compute_location_bucket(player)
-    eligibility_flag = compute_eligibility_flag(player)
-    score = compute_score(player, completeness_pct)
+
+    auto_flag = compute_eligibility_flag(player)
+    override = (player.get("eligibility_flag_override") or "").strip()
+    effective_flag = override if override in ELIGIBILITY_FLAGS else auto_flag
+
+    score = compute_score(player, completeness_pct, eligibility_flag=effective_flag)
     priority_tier = compute_priority_tier(score, completeness_pct)
     status = compute_status(completeness_pct, score, player.get("status") or "New")
 
@@ -203,7 +226,8 @@ def evaluate_player(player: dict) -> dict:
         "missing_fields": ",".join(missing),
         "level_tier": level_tier,
         "location_bucket": location_bucket,
-        "eligibility_flag": eligibility_flag,
+        "eligibility_flag": effective_flag,
+        "eligibility_flag_auto": auto_flag,
         "score": score,
         "priority_tier": priority_tier,
         "status": status,

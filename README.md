@@ -75,6 +75,21 @@ status.
   locks in the actual rule, tighten `compute_eligibility_flag()` accordingly
   — that's a five-minute edit once the rule is confirmed.
 
+**Staff eligibility override.** The automatic flag has no way to record a
+real determination once someone's actually done the legwork (checked with
+FCRI's own citizenship process, for example) — "Needs Manual Check" would
+otherwise sit there forever even after the check happens. On any player's
+detail page, staff can set "actual eligibility" from a dropdown (Confirmed
+Eligible / Likely Eligible / Needs Manual Check / Not Eligible), with an
+optional note saying why. Setting one immediately updates that player's
+score and priority tier to match the real determination, not just the
+label — and it's recorded in the same audit trail as Contacted/Shortlisted/
+Reject actions. The automatic answer is still tracked separately
+(`eligibility_flag_auto`) and shown alongside the override, so nothing's
+lost; choosing "Use automatic" on the dropdown clears the override.
+Overrides also survive `recompute_scores.py` — re-running it won't wipe a
+staff decision, it only recalculates the automatic side.
+
 **Scoring (0–100).** Weighted mostly on playing level, with smaller
 contributions from eligibility clarity and evidence provided (video,
 scorecards). Weights are a starting point in `compute_score()` — the

@@ -53,7 +53,12 @@
     </div>
     <div>
       <div class="k">Eligibility flag</div>
-      <div class="v">{{ player.eligibility_flag }}</div>
+      <div class="v">
+        {{ player.eligibility_flag }}
+        {% if player.eligibility_flag_override %}
+          <span class="muted">(staff override by {{ player.eligibility_overridden_by }} on {{ player.eligibility_overridden_at }} &mdash; automatic logic says "{{ player.eligibility_flag_auto }}")</span>
+        {% endif %}
+      </div>
       <div class="k">Passport / descent</div>
       <div class="v">Italian passport: {{ player.holds_italian_passport }} &middot; Italian parent/grandparent: {{ player.italian_parent_or_grandparent or '—' }}</div>
       <div class="k">Birthplace / residency</div>
@@ -96,6 +101,34 @@
     for anything that doesn't need chasing but isn't a rejection &mdash; a
     duplicate entry, a test/validation submission, a withdrawn applicant,
     or someone you're not pursuing right now. Add a note above to say why.
+  </p>
+
+  <form method="post" action="{{ url_for('override_eligibility', player_id=player.id) }}"
+        style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div>
+      <label for="eligibility_flag_override" style="margin-top:0;">Set actual eligibility</label>
+      <select name="eligibility_flag_override" id="eligibility_flag_override" style="width:220px;">
+        <option value="" {% if not player.eligibility_flag_override %}selected{% endif %}>-- Use automatic ({{ player.eligibility_flag_auto or player.eligibility_flag }}) --</option>
+        <option value="Confirmed Eligible" {% if player.eligibility_flag_override == 'Confirmed Eligible' %}selected{% endif %}>Confirmed Eligible</option>
+        <option value="Likely Eligible" {% if player.eligibility_flag_override == 'Likely Eligible' %}selected{% endif %}>Likely Eligible</option>
+        <option value="Needs Manual Check" {% if player.eligibility_flag_override == 'Needs Manual Check' %}selected{% endif %}>Needs Manual Check</option>
+        <option value="Not Eligible (as stated)" {% if player.eligibility_flag_override == 'Not Eligible (as stated)' %}selected{% endif %}>Not Eligible</option>
+      </select>
+    </div>
+    <div>
+      <label for="eligibility_note" style="margin-top:0;">Why? (optional)</label>
+      <input type="text" name="note" id="eligibility_note" placeholder="e.g. confirmed via FCRI compliance check" style="width:280px;">
+    </div>
+    <div>
+      <button type="submit" class="secondary">Save</button>
+    </div>
+  </form>
+  <p class="muted" style="margin-top:6px;">
+    Use this once someone's actually checked their real eligibility (e.g.
+    with FCRI's own citizenship process) &mdash; the automatic flag alone
+    can only say "Needs Manual Check", it can't record what the check found.
+    Choosing "Use automatic" clears any existing override.
   </p>
 
   {% if actions %}

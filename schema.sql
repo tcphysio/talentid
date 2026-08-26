@@ -44,6 +44,10 @@ CREATE TABLE players (
     codice_fiscale TEXT,                -- Italian tax identification number, if any
     visa_status TEXT,                   -- EU/Italian citizen, Non-EU - visa required, Non-EU - visa held, N/A
     confirm_token TEXT,                 -- per-submission secret for the /thanks page, see app.py thanks()
+    eligibility_flag_auto TEXT,         -- what the automatic rules alone would say, kept even after an override
+    eligibility_flag_override TEXT,     -- staff override, takes precedence over eligibility_flag_auto when set
+    eligibility_overridden_by TEXT,     -- staff display name who set/cleared the override
+    eligibility_overridden_at TEXT,     -- when the override was last set/cleared
 
     -- Nomination source
     nominated_by TEXT,              -- Self / Club / Coach / Federation contact

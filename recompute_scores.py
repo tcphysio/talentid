@@ -37,8 +37,13 @@ import logic
 
 DERIVED_COLS = [
     "completeness_pct", "missing_fields", "level_tier", "location_bucket",
-    "eligibility_flag", "score", "priority_tier", "status",
+    "eligibility_flag", "eligibility_flag_auto", "score", "priority_tier", "status",
 ]
+# Deliberately NOT touched here: eligibility_flag_override,
+# eligibility_overridden_by, eligibility_overridden_at -- those are a staff
+# decision (see app.py's override_eligibility()) and evaluate_player()
+# already reads eligibility_flag_override off each row to fold it back into
+# the recomputed eligibility_flag, so overrides survive a recompute intact.
 
 url = os.environ.get("DATABASE_URL")
 if not url:

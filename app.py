@@ -569,6 +569,57 @@ def player_action(player_id):
     return redirect(url_for("player_detail", player_id=player_id))
 
 
+@app.route("/admin/player/<int:player_id>/override-eligibility", methods=["POST"])
+@login_required
+def override_eligibility(player_id):
+    """
+    Lets staff record the *actual* eligibility determination once someone
+    has done the real legwork (checked with FCRI's own process, etc.) --
+    the automatic eligibility_flag alone has no way to represent "we
+    checked, here's the real answer" (see logic.py's evaluate_player()).
+    Submitting an empty value clears the override and reverts to whatever
+    the automatic rules say.
+    """
+    value = request.form.get("eligibility_flag_override", "").strip()
+    if value and value not in logic.ELIGIBILITY_FLAGS:
+        abort(400)
+    note = request.form.get("note", "").strip()
+
+    conn = get_conn()
+    player = conn.execute("SELECT * FROM players WHERE id = ?", (player_id,)).fetchone()
+    if player is None:
+        conn.close()
+        abort(404)
+
+    staff_name = session.get("staff_display_name", "Staff")
+    now = datetime.now().isoformat()
+
+    player_dict = dict(player)
+    player_dict["eligibility_flag_override"] = value or None
+    updated = logic.evaluate_player(player_dict)
+
+    conn.execute(
+        "UPDATE players SET eligibility_flag = ?, eligibility_flag_auto = ?, "
+        "eligibility_flag_override = ?, eligibility_overridden_by = ?, eligibility_overridden_at = ?, "
+        "score = ?, priority_tier = ?, status = ?, last_updated_at = ? WHERE id = ?",
+        (
+            updated["eligibility_flag"], updated["eligibility_flag_auto"],
+            value or None, staff_name if value else None, now if value else None,
+            updated["score"], updated["priority_tier"], updated["status"],
+            now, player_id,
+        ),
+    )
+    action_label = f"Eligibility set to {value}" if value else "Eligibility override cleared"
+    conn.execute(
+        "INSERT INTO review_actions (player_id, action, note, staff_name, staff_id) VALUES (?, ?, ?, ?, ?)",
+        (player_id, action_label, note, staff_name, session.get("staff_id")),
+    )
+    conn.commit()
+    conn.close()
+    flash(action_label)
+    return redirect(url_for("player_detail", player_id=player_id))
+
+
 FOLLOWUP_CRON_TOKEN = os.environ.get("FOLLOWUP_CRON_TOKEN")  # see README - Scheduling follow-ups
 
 

@@ -87,6 +87,13 @@ ALTER TABLE players ADD COLUMN IF NOT EXISTS codice_fiscale TEXT;
 -- this column existed; those fall back to the session-cookie check only.
 ALTER TABLE players ADD COLUMN IF NOT EXISTS confirm_token TEXT;
 
+-- Staff eligibility override -- see logic.py's evaluate_player() and
+-- app.py's override_eligibility() for how these interact.
+ALTER TABLE players ADD COLUMN IF NOT EXISTS eligibility_flag_auto TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS eligibility_flag_override TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS eligibility_overridden_by TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS eligibility_overridden_at TEXT;
+
 CREATE TABLE IF NOT EXISTS follow_ups (
     id SERIAL PRIMARY KEY,
     player_id INTEGER NOT NULL REFERENCES players(id),

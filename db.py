@@ -105,6 +105,10 @@ _NEW_COLUMNS = {
         "aire_number": "TEXT",
         "codice_fiscale": "TEXT",
         "confirm_token": "TEXT",
+        "eligibility_flag_auto": "TEXT",
+        "eligibility_flag_override": "TEXT",
+        "eligibility_overridden_by": "TEXT",
+        "eligibility_overridden_at": "TEXT",
     },
     "review_actions": {
         "staff_id": "INTEGER",
