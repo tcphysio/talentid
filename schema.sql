@@ -43,6 +43,7 @@ CREATE TABLE players (
     aire_number TEXT,                   -- AIRE registration number (Registry of Italians Residing Abroad), if any
     codice_fiscale TEXT,                -- Italian tax identification number, if any
     visa_status TEXT,                   -- EU/Italian citizen, Non-EU - visa required, Non-EU - visa held, N/A
+    confirm_token TEXT,                 -- per-submission secret for the /thanks page, see app.py thanks()
 
     -- Nomination source
     nominated_by TEXT,              -- Self / Club / Coach / Federation contact

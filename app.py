@@ -205,6 +205,11 @@ def apply():
         computed = logic.evaluate_player(data)
         data.update(computed)
 
+        # A random per-submission token, included in the confirmation-page
+        # URL itself rather than only relying on the session cookie -- see
+        # the note on thanks() below for why.
+        data["confirm_token"] = secrets.token_urlsafe(24)
+
         conn = get_conn()
         cols = list(data.keys())
         placeholders = ",".join("?" for _ in cols)
@@ -226,17 +231,13 @@ def apply():
 
         conn.close()
 
-        # Record that *this browser* legitimately created this player_id,
-        # so the /thanks page below can't be browsed by anyone who just
-        # increments the number in the URL (player_id is a small sequential
-        # int -- without this, /thanks/1, /thanks/2, ... would let a
-        # stranger enumerate every applicant's name with no login at all).
-        # A list, not a single value, because a club/coach/federation
-        # nominator can legitimately submit more than one player from the
-        # same browser session.
+        # Record that *this browser* legitimately created this player_id, as
+        # a belt-and-braces check alongside the URL token below. A list, not
+        # a single value, because a club/coach/federation nominator can
+        # legitimately submit more than one player from the same session.
         session.setdefault("own_player_ids", []).append(player_id)
 
-        return redirect(url_for("thanks", player_id=player_id))
+        return redirect(url_for("thanks", player_id=player_id, t=data["confirm_token"]))
 
     return render_template("apply.html")
 
@@ -248,13 +249,29 @@ def disclaimer():
 
 @app.route("/thanks/<int:player_id>")
 def thanks(player_id):
-    if player_id not in session.get("own_player_ids", []):
-        abort(404)
     conn = get_conn()
     player = conn.execute("SELECT * FROM players WHERE id = ?", (player_id,)).fetchone()
     conn.close()
     if player is None:
         abort(404)
+
+    # Ownership check so /thanks/1, /thanks/2, ... can't be enumerated by a
+    # stranger (player_id is a small sequential int). Two ways to prove
+    # ownership, either is enough:
+    #   1. A session cookie recorded at submission time (own_player_ids).
+    #   2. A random per-submission token in the URL query string, handed
+    #      back in the redirect from /apply.
+    # The token exists because #1 alone isn't reliable: WhatsApp's in-app
+    # browser (and iOS cookie tracking prevention more generally) can drop
+    # the session cookie across the redirect from a form POST to the next
+    # page, which would otherwise 404 the very person who just submitted.
+    submitted_token = request.args.get("t", "")
+    token_matches = bool(submitted_token) and bool(player["confirm_token"]) and \
+        secrets.compare_digest(submitted_token, player["confirm_token"])
+    session_owns = player_id in session.get("own_player_ids", [])
+    if not (token_matches or session_owns):
+        abort(404)
+
     return render_template("thanks.html", player=player)
 
 

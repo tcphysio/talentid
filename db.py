@@ -104,6 +104,7 @@ _NEW_COLUMNS = {
     "players": {
         "aire_number": "TEXT",
         "codice_fiscale": "TEXT",
+        "confirm_token": "TEXT",
     },
     "review_actions": {
         "staff_id": "INTEGER",

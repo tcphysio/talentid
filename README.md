@@ -30,6 +30,15 @@ no-code platform. It is not deployed anywhere — see Deployment below.
   language toggle (top-right of the header) switches between them.
 - `seed.py` — five realistic sample submissions covering different tiers,
   locations, and eligibility states, so the dashboard isn't empty on first run.
+- `recompute_scores.py` — recalculates eligibility flag, score, priority
+  tier, and the other derived fields for every existing player using the
+  current rules in `logic.py`, without touching what anyone actually typed
+  in. Run this any time you tune the scoring/eligibility logic — code
+  changes only affect *new* submissions on their own, existing rows keep
+  whatever was computed when they applied until you run this. Defaults to
+  a dry-run preview; pass `--apply` to save. See "Turning the stub into
+  real automation" below for the same `DATABASE_URL=... python3 ...`
+  pattern as `seed.py`.
 
 ## Running it locally
 
@@ -58,9 +67,13 @@ status.
   **not** adjudicate Italian citizenship rules — Federazione Cricket Italiana (FCRI) hasn't yet
   confirmed whether eligibility runs on descent (*jure sanguinis*),
   residency, or both. Anything short of a passport already in hand is routed
-  to `Needs Manual Check` rather than auto-approved or auto-rejected. Once
-  the federation locks in the actual rule, tighten `compute_eligibility_flag()`
-  accordingly — that's a five-minute edit once the rule is confirmed.
+  to `Needs Manual Check` rather than auto-approved or auto-rejected — this
+  includes 3+ years of Italian residency on its own (no passport, no
+  descent claimed), which is a real pathway `compute_eligibility_flag()`
+  checks alongside passport/descent, matching the same 3-year threshold the
+  client-side pre-screen gate on `/apply` already uses. Once the federation
+  locks in the actual rule, tighten `compute_eligibility_flag()` accordingly
+  — that's a five-minute edit once the rule is confirmed.
 
 **Scoring (0–100).** Weighted mostly on playing level, with smaller
 contributions from eligibility clarity and evidence provided (video,
@@ -188,6 +201,19 @@ can't be guessed faster by timing how quickly the server says no; and the
 site now sends a small set of standard security headers
 (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) that most
 modern browsers respect automatically.
+
+**The `/thanks` confirmation page** (shown right after someone submits
+`/apply`) checks that whoever's viewing it is the person who actually
+submitted, so a stranger can't enumerate `/thanks/1`, `/thanks/2`, ... and
+read other applicants' names and details. That check used to rely only on
+a session cookie set at submission time — which works in a normal browser
+tab, but WhatsApp's in-app browser (and iOS's cookie tracking prevention
+more generally) can drop that cookie across the redirect from the form
+POST to the confirmation page, showing the person who *just submitted* a
+"Not Found" page even though their data saved fine. Fixed by also
+including a random per-submission token in the confirmation URL itself —
+either the session cookie or the token is enough to view the page, a
+stranger with neither gets a 404 same as before.
 
 None of this requires any action on an existing deployment other than making
 sure `SECRET_KEY` is set (see above) — everything else applies automatically

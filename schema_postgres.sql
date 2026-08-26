@@ -80,6 +80,13 @@ CREATE TABLE IF NOT EXISTS players (
 ALTER TABLE players ADD COLUMN IF NOT EXISTS aire_number TEXT;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS codice_fiscale TEXT;
 
+-- Per-submission secret used to authorise the /thanks confirmation page
+-- without relying solely on the session cookie -- see app.py's thanks()
+-- for why (in-app browsers like WhatsApp's can drop the session cookie
+-- across the post-submission redirect). NULL on rows submitted before
+-- this column existed; those fall back to the session-cookie check only.
+ALTER TABLE players ADD COLUMN IF NOT EXISTS confirm_token TEXT;
+
 CREATE TABLE IF NOT EXISTS follow_ups (
     id SERIAL PRIMARY KEY,
     player_id INTEGER NOT NULL REFERENCES players(id),

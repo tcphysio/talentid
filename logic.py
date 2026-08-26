@@ -8,6 +8,7 @@ eligibility rules, scoring weights, chase cadence) without touching
 the web app or database code.
 """
 
+import re
 from datetime import datetime, timedelta
 
 # ---------------------------------------------------------------------------
@@ -71,6 +72,19 @@ def compute_level_tier(player: dict) -> str:
     return LEVEL_TIER_MAP.get(level, "Unknown")
 
 
+def _parse_years(raw: str):
+    """
+    Pulls a leading integer out of a free-text "years resident" answer
+    (e.g. "10+", "10 years", "about 12") the same way the client-side
+    pre-screen gate does with JS's parseInt() in apply.html -- returns
+    None if there's no leading number to parse.
+    """
+    if not raw:
+        return None
+    m = re.match(r"\s*(-?\d+)", raw)
+    return int(m.group(1)) if m else None
+
+
 def compute_eligibility_flag(player: dict) -> str:
     """
     Deliberately conservative: this system captures raw facts, it does not
@@ -79,15 +93,24 @@ def compute_eligibility_flag(player: dict) -> str:
     residency, or both -- so anything short of a confirmed passport in hand
     is routed to manual check rather than auto-approved or auto-rejected.
     Tighten this once the federation confirms the exact eligibility rule.
+
+    years_resident_in_italy is treated as a third possible pathway,
+    matching the client-side pre-screen gate in apply.html (which already
+    lets 3+ years of residency through as "worth a look" alongside
+    passport/descent) -- residency claims route to manual check rather
+    than "Not Eligible", never to an automatic yes.
     """
     passport = (player.get("holds_italian_passport") or "").strip().lower()
     descent = (player.get("italian_parent_or_grandparent") or "").strip().lower()
+    years_resident = _parse_years(player.get("years_resident_in_italy") or "")
 
     if passport == "yes":
         return "Confirmed Eligible"
     if passport == "applied":
         return "Likely Eligible"
     if descent == "yes" or passport == "unsure" or descent == "unsure":
+        return "Needs Manual Check"
+    if years_resident is not None and years_resident >= 3:
         return "Needs Manual Check"
     if passport == "no" and descent == "no":
         return "Not Eligible (as stated)"
