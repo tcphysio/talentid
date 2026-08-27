@@ -196,6 +196,29 @@ TRANSLATIONS = {
             "Italiana at {email}."
         ),
         "disclaimer_back_link": "Back",
+
+        "heritage_page_title": "Family & Heritage Details",
+        "heritage_heading": "A bit more detail, {name}",
+        "heritage_intro": (
+            "Federazione Cricket Italiana's staff are looking further into "
+            "your Italian family background as part of reviewing your "
+            "eligibility. It would help to know more about the parent or "
+            "grandparent you mentioned — their name, where and when they "
+            "were born, and any documents you can share (birth or marriage "
+            "certificates, passports, family records). This doesn't need "
+            "to be complete or official — anything you have helps."
+        ),
+        "label_heritage_details": "Tell us what you know",
+        "hint_heritage_details": "(e.g. name, birth town/region, approximate dates, any other detail)",
+        "label_heritage_docs": "Links to any documents",
+        "hint_heritage_docs": "(Google Drive, Dropbox, photos, etc. — comma separated)",
+        "btn_heritage_submit": "Send to FCRI",
+        "heritage_thanks_heading": "Thank you",
+        "heritage_thanks_body": (
+            "This has been added to your file and our staff will take it "
+            "into account when reviewing your eligibility."
+        ),
+        "heritage_edit_link": "Sent something else you'd like to add? Update your answer",
     },
 
     "it": {
@@ -387,6 +410,30 @@ TRANSLATIONS = {
             "{email}."
         ),
         "disclaimer_back_link": "Indietro",
+
+        "heritage_page_title": "Dettagli su Famiglia e Origini",
+        "heritage_heading": "Qualche dettaglio in più, {name}",
+        "heritage_intro": (
+            "Lo staff della Federazione Cricket Italiana sta approfondendo "
+            "le tue origini familiari italiane come parte della verifica "
+            "della tua idoneità. Sarebbe utile sapere di più sul genitore o "
+            "sul nonno/a che hai menzionato — nome, luogo e data di nascita, "
+            "e qualsiasi documento tu possa condividere (certificati di "
+            "nascita o matrimonio, passaporti, documenti di famiglia). Non "
+            "serve che sia completo o ufficiale — qualsiasi cosa tu abbia è "
+            "utile."
+        ),
+        "label_heritage_details": "Raccontaci quello che sai",
+        "hint_heritage_details": "(es. nome, città/regione di nascita, date approssimative, altri dettagli)",
+        "label_heritage_docs": "Link a eventuali documenti",
+        "hint_heritage_docs": "(Google Drive, Dropbox, foto, ecc. — separati da virgola)",
+        "btn_heritage_submit": "Invia alla FCRI",
+        "heritage_thanks_heading": "Grazie",
+        "heritage_thanks_body": (
+            "Questo è stato aggiunto al tuo fascicolo e il nostro staff ne "
+            "terrà conto nella verifica della tua idoneità."
+        ),
+        "heritage_edit_link": "Vuoi aggiungere altro? Aggiorna la tua risposta",
     },
 }
 

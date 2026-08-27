@@ -94,6 +94,17 @@ ALTER TABLE players ADD COLUMN IF NOT EXISTS eligibility_flag_override TEXT;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS eligibility_overridden_by TEXT;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS eligibility_overridden_at TEXT;
 
+-- Staff can ask an applicant for more detail on an Italian family/heritage
+-- claim under manual review, via a one-off link (same secret-token pattern
+-- as confirm_token above) -- see app.py's request_heritage_info() and
+-- heritage_info().
+ALTER TABLE players ADD COLUMN IF NOT EXISTS heritage_info_requested_at TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS heritage_info_requested_by TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS heritage_info_request_token TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS heritage_info_details TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS heritage_info_document_links TEXT;
+ALTER TABLE players ADD COLUMN IF NOT EXISTS heritage_info_submitted_at TEXT;
+
 CREATE TABLE IF NOT EXISTS follow_ups (
     id SERIAL PRIMARY KEY,
     player_id INTEGER NOT NULL REFERENCES players(id),

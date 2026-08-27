@@ -131,6 +131,46 @@
     Choosing "Use automatic" clears any existing override.
   </p>
 
+  <div style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+    <div class="k">Family / heritage info</div>
+    {% if player.heritage_info_submitted_at %}
+      <div class="v" style="margin-bottom:8px;">
+        Submitted by the applicant on {{ player.heritage_info_submitted_at }}:
+      </div>
+      <div class="v" style="white-space:pre-wrap;background:#f7f7f5;padding:10px;border-radius:6px;">{{ player.heritage_info_details or '—' }}</div>
+      {% if player.heritage_info_document_links %}
+      <div class="v" style="margin-top:6px;">Documents: {{ player.heritage_info_document_links }}</div>
+      {% endif %}
+    {% elif player.heritage_info_requested_at %}
+      <p class="muted" style="margin-top:4px;">
+        Requested by {{ player.heritage_info_requested_by }} on {{ player.heritage_info_requested_at }}
+        &mdash; nothing back from the applicant yet.
+      </p>
+    {% else %}
+      <p class="muted" style="margin-top:4px;">Not requested yet.</p>
+    {% endif %}
+
+    {% if player.heritage_info_request_token %}
+    <p class="muted" style="margin-top:6px;">
+      Link to send the applicant (copy and send it yourself &mdash; WhatsApp, email, whatever they used before):<br>
+      <code style="word-break:break-all;">{{ url_for('heritage_info', player_id=player.id, t=player.heritage_info_request_token, _external=True) }}</code>
+    </p>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('request_heritage_info', player_id=player.id) }}" style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label for="heritage_note" style="margin-top:0;">Note (optional)</label>
+        <input type="text" name="note" id="heritage_note" placeholder="e.g. following up on grandparent claim" style="width:280px;">
+      </div>
+      <div>
+        <button type="submit" class="secondary">
+          {% if player.heritage_info_request_token %}Send another request{% else %}Request family/heritage info{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+
   {% if actions %}
   <table style="margin-top:16px;">
     <thead><tr><th>When</th><th>Action</th><th>Staff</th><th>Note</th></tr></thead>

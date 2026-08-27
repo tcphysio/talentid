@@ -620,6 +620,100 @@ def override_eligibility(player_id):
     return redirect(url_for("player_detail", player_id=player_id))
 
 
+@app.route("/admin/player/<int:player_id>/request-heritage-info", methods=["POST"])
+@login_required
+def request_heritage_info(player_id):
+    """
+    Generates a one-off secret link staff can hand the applicant (WhatsApp,
+    email -- whatever channel they already used) asking for more detail on
+    an Italian family/heritage claim under manual review: which relative,
+    where they were born, any documents. Nothing here sends automatically --
+    same "drafted/logged, staff sends it" pattern as every other message in
+    this app -- the link just needs to authenticate the applicant without
+    requiring them to create an account, so it works the same way the
+    /thanks confirm_token does.
+
+    Re-running this (e.g. staff need to re-ask) simply issues a fresh token
+    and updates requested_at/by; it doesn't touch anything the applicant may
+    have already submitted, so asking again doesn't erase an earlier answer.
+    """
+    conn = get_conn()
+    player = conn.execute("SELECT * FROM players WHERE id = ?", (player_id,)).fetchone()
+    if player is None:
+        conn.close()
+        abort(404)
+
+    staff_name = session.get("staff_display_name", "Staff")
+    note = request.form.get("note", "").strip()
+    now = datetime.now().isoformat()
+    token = secrets.token_urlsafe(24)
+
+    conn.execute(
+        "UPDATE players SET heritage_info_request_token = ?, heritage_info_requested_at = ?, "
+        "heritage_info_requested_by = ? WHERE id = ?",
+        (token, now, staff_name, player_id),
+    )
+    conn.execute(
+        "INSERT INTO review_actions (player_id, action, note, staff_name, staff_id) VALUES (?, ?, ?, ?, ?)",
+        (player_id, "Requested family/heritage info", note, staff_name, session.get("staff_id")),
+    )
+    conn.commit()
+    conn.close()
+    flash("Link generated below -- copy it and send it to the applicant yourself.")
+    return redirect(url_for("player_detail", player_id=player_id))
+
+
+@app.route("/heritage-info/<int:player_id>", methods=["GET", "POST"])
+def heritage_info(player_id):
+    """
+    Public, unauthenticated page an applicant reaches via the secret link
+    from request_heritage_info() above -- lets them send back extra detail
+    on a family/heritage claim without needing a staff login or an account
+    of their own. Token-only auth (no session fallback like /thanks has,
+    since staff -- not the applicant's own browser -- generate this link):
+    a missing/wrong/never-requested token 404s, same reasoning as /thanks'
+    IDOR protection so player_id can't be enumerated to read who staff have
+    asked about. Submitting again (e.g. after finding more documents) simply
+    overwrites the previous answer -- the token stays valid, it isn't
+    single-use.
+    """
+    conn = get_conn()
+    player = conn.execute("SELECT * FROM players WHERE id = ?", (player_id,)).fetchone()
+
+    submitted_token = request.args.get("t", "")
+    token_matches = (
+        player is not None
+        and bool(submitted_token)
+        and bool(player["heritage_info_request_token"])
+        and secrets.compare_digest(submitted_token, player["heritage_info_request_token"])
+    )
+    if not token_matches:
+        conn.close()
+        abort(404)
+
+    if request.method == "POST":
+        details = request.form.get("heritage_info_details", "").strip()
+        doc_links = request.form.get("heritage_info_document_links", "").strip()
+        conn.execute(
+            "UPDATE players SET heritage_info_details = ?, heritage_info_document_links = ?, "
+            "heritage_info_submitted_at = ? WHERE id = ?",
+            (details, doc_links, datetime.now().isoformat(), player_id),
+        )
+        # Attributed to "Applicant" rather than a staff_id (there isn't
+        # one -- nobody's logged in here) so it still shows up in the same
+        # audit trail on the player's page, clearly marked as not staff.
+        conn.execute(
+            "INSERT INTO review_actions (player_id, action, note, staff_name, staff_id) VALUES (?, ?, ?, ?, ?)",
+            (player_id, "Family/heritage info received from applicant", "", "Applicant", None),
+        )
+        conn.commit()
+        conn.close()
+        return render_template("heritage_info.html", player=player, token=submitted_token, submitted=True)
+
+    conn.close()
+    return render_template("heritage_info.html", player=player, token=submitted_token, submitted=False)
+
+
 FOLLOWUP_CRON_TOKEN = os.environ.get("FOLLOWUP_CRON_TOKEN")  # see README - Scheduling follow-ups
 
 

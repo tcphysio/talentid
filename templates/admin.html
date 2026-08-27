@@ -92,6 +92,8 @@
         {% elif p.eligibility_flag == 'Likely Eligible' %}<span class="pill likely">{{ p.eligibility_flag }}</span>
         {% elif p.eligibility_flag == 'Needs Manual Check' %}<span class="pill check">{{ p.eligibility_flag }}</span>
         {% else %}<span class="pill not-eligible">{{ p.eligibility_flag }}</span>{% endif %}
+        {% if p.heritage_info_submitted_at %}<span class="muted" title="Family/heritage info received">&#128231;</span>
+        {% elif p.heritage_info_requested_at %}<span class="muted" title="Family/heritage info requested, awaiting reply">&#8987;</span>{% endif %}
       </td>
       <td>{{ p.completeness_pct }}%</td>
       <td><strong>{{ p.score }}</strong></td>

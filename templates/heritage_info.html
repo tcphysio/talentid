@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ t('heritage_page_title') }} — FCRI{% endblock %}
+{% block wrap_class %}form-wrap{% endblock %}
+{% block content %}
+
+<div class="card">
+  {% if submitted %}
+    <h2 style="margin-top:0;">{{ t('heritage_thanks_heading') }}</h2>
+    <p>{{ t('heritage_thanks_body') }}</p>
+    <p class="muted"><a href="{{ url_for('heritage_info', player_id=player.id, t=token) }}">{{ t('heritage_edit_link') }}</a></p>
+  {% else %}
+    <h2 style="margin-top:0;">{{ t('heritage_heading').format(name=player.full_name) }}</h2>
+    <p>{{ t('heritage_intro') }}</p>
+
+    <form method="post" action="{{ url_for('heritage_info', player_id=player.id, t=token) }}">
+      <label for="heritage_info_details">{{ t('label_heritage_details') }}</label>
+      <textarea name="heritage_info_details" id="heritage_info_details" rows="6">{{ player.heritage_info_details or '' }}</textarea>
+      <p class="muted" style="margin-top:-6px;">{{ t('hint_heritage_details') }}</p>
+
+      <label for="heritage_info_document_links">{{ t('label_heritage_docs') }}</label>
+      <input type="text" name="heritage_info_document_links" id="heritage_info_document_links" value="{{ player.heritage_info_document_links or '' }}">
+      <p class="muted" style="margin-top:-6px;">{{ t('hint_heritage_docs') }}</p>
+
+      <button type="submit">{{ t('btn_heritage_submit') }}</button>
+    </form>
+  {% endif %}
+</div>
+
+{% endblock %}

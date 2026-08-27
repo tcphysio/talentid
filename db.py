@@ -109,6 +109,12 @@ _NEW_COLUMNS = {
         "eligibility_flag_override": "TEXT",
         "eligibility_overridden_by": "TEXT",
         "eligibility_overridden_at": "TEXT",
+        "heritage_info_requested_at": "TEXT",
+        "heritage_info_requested_by": "TEXT",
+        "heritage_info_request_token": "TEXT",
+        "heritage_info_details": "TEXT",
+        "heritage_info_document_links": "TEXT",
+        "heritage_info_submitted_at": "TEXT",
     },
     "review_actions": {
         "staff_id": "INTEGER",

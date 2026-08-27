@@ -20,6 +20,10 @@ no-code platform. It is not deployed anywhere — see Deployment below.
 - `/admin/staff` — add/deactivate/promote staff accounts (admins only).
 - `/admin/run-follow-ups` — runs the automated chase logic on demand (in
   production this would run on a schedule — see below).
+- `/heritage-info/<id>?t=...` — public, token-only page an applicant reaches
+  via a one-off link staff generate from their profile page, for sending back
+  extra detail on a family/heritage claim under manual review (see "Requesting
+  family/heritage info" below).
 - `logic.py` — **all the business rules live here.** Level tiers, eligibility
   flags, scoring weights, follow-up cadence. This is the file to edit as
   Federazione Cricket Italiana (FCRI)'s actual criteria firm up.
@@ -89,6 +93,29 @@ Reject actions. The automatic answer is still tracked separately
 lost; choosing "Use automatic" on the dropdown clears the override.
 Overrides also survive `recompute_scores.py` — re-running it won't wipe a
 staff decision, it only recalculates the automatic side.
+
+**Requesting family/heritage info.** A descent claim (Italian parent or
+grandparent) often needs more than the form's one Yes/No/Unsure question
+before staff can make a call — a name, a birth town, a document. On any
+player's detail page, the "Family / heritage info" section has a **Request
+family/heritage info** button. Clicking it generates a one-off secret link
+(same pattern as the `/thanks` confirmation link) and shows it on the page
+for staff to copy and send themselves — WhatsApp, email, whatever channel
+they already used with that applicant. Nothing is emailed automatically,
+consistent with every other message in this app. The applicant opens the
+link (no login needed), sees a short bilingual page explaining what's being
+asked, and can submit free-text detail plus links to supporting documents
+(Google Drive, photos, etc.). Their answer lands straight on the player's
+page for staff to read, and shows up in the audit trail so it's clear when
+it was asked for and when it came back. Submitting the link doesn't touch
+score, status, or eligibility_flag on its own — it's purely a way to collect
+the extra detail a human then uses (typically via the eligibility override
+above) once they've actually reviewed it. The dashboard shows a small
+envelope (received) or hourglass (requested, no reply yet) next to a
+player's eligibility pill so staff can see who needs following up without
+opening every profile. The link stays valid for repeat submissions (an
+applicant who finds more documents later can just reuse it), and staff can
+send a fresh one at any time without erasing what's already been submitted.
 
 **Scoring (0–100).** Weighted mostly on playing level, with smaller
 contributions from eligibility clarity and evidence provided (video,

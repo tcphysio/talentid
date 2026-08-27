@@ -49,6 +49,15 @@ CREATE TABLE players (
     eligibility_overridden_by TEXT,     -- staff display name who set/cleared the override
     eligibility_overridden_at TEXT,     -- when the override was last set/cleared
 
+    -- Staff-requested family/heritage detail, for descent claims under manual
+    -- review (see app.py's request_heritage_info()/heritage_info())
+    heritage_info_requested_at TEXT,    -- when staff last asked for this
+    heritage_info_requested_by TEXT,    -- staff display name who asked
+    heritage_info_request_token TEXT,   -- secret in the applicant-facing link
+    heritage_info_details TEXT,         -- applicant's free-text answer (family names, birthplaces, etc.)
+    heritage_info_document_links TEXT,  -- comma-separated links to supporting documents
+    heritage_info_submitted_at TEXT,    -- when the applicant last submitted this
+
     -- Nomination source
     nominated_by TEXT,              -- Self / Club / Coach / Federation contact
     nominator_name TEXT,
