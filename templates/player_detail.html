@@ -73,9 +73,19 @@
   <div style="margin-top:12px;">
     <div class="k">Evidence</div>
     <div class="v">
-      {% if player.video_links %}Video: {{ player.video_links }}<br>{% endif %}
-      {% if player.scorecard_links %}Scorecards: {{ player.scorecard_links }}<br>{% endif %}
-      {% if not player.video_links and not player.scorecard_links %}<span class="muted">None provided</span>{% endif %}
+      {% set videos = split_links(player.video_links) %}
+      {% set scorecards = split_links(player.scorecard_links) %}
+      {% if videos %}
+        Video:
+        {% for item in videos %}{% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener">{% if videos|length > 1 %}Watch {{ loop.index }}{% else %}Watch{% endif %}</a>{% else %}{{ item.text }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+        <br>
+      {% endif %}
+      {% if scorecards %}
+        Scorecards:
+        {% for item in scorecards %}{% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener">{% if scorecards|length > 1 %}View {{ loop.index }}{% else %}View{% endif %}</a>{% else %}{{ item.text }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+        <br>
+      {% endif %}
+      {% if not videos and not scorecards %}<span class="muted">None provided</span>{% endif %}
       {% if player.referee_name %}<br>Referee: {{ player.referee_name }} ({{ player.referee_contact }}){% endif %}
     </div>
   </div>
@@ -84,6 +94,46 @@
     <div class="k">Nomination</div>
     <div class="v">{{ player.nominated_by }}{% if player.nominator_name %} &mdash; {{ player.nominator_name }} ({{ player.nominator_contact }}){% endif %}</div>
   </div>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:10px;">
+    <h3 style="margin-top:0;">Coach notes</h3>
+    <a class="btn secondary" style="padding:6px 14px;font-size:13px;" href="{{ url_for('player_brief', player_id=player.id) }}" target="_blank">Open follow-up brief &rarr;</a>
+  </div>
+  <p class="muted" style="margin-top:-6px;">
+    Observations from anyone coaching or assessing this player &mdash;
+    technical, physical, character, availability. These are what carry into
+    the follow-up brief; status changes and eligibility actions below don't.
+  </p>
+  <form method="post" action="{{ url_for('player_action', player_id=player.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="Coach note">
+    <label for="note_category" style="margin-top:0;">Category</label>
+    <select name="note_category" id="note_category" style="width:220px;">
+      <option value="General">General</option>
+      <option value="Technical">Technical</option>
+      <option value="Physical">Physical / conditioning</option>
+      <option value="Character">Character / attitude</option>
+      <option value="Availability">Availability / logistics</option>
+    </select>
+    <label for="note" style="margin-top:10px;">Note</label>
+    <textarea name="note" id="note" rows="4" placeholder="What did you see? What should the next person watching this player know?"></textarea>
+    <button type="submit" style="margin-top:10px;">Add note</button>
+  </form>
+
+  {% if coach_notes %}
+  <table style="margin-top:16px;">
+    <thead><tr><th>When</th><th>Category</th><th>By</th><th>Note</th></tr></thead>
+    <tbody>
+      {% for n in coach_notes %}
+      <tr><td class="muted">{{ n.created_at }}</td><td>{{ n.category }}</td><td>{{ n.staff_name }}</td><td style="white-space:pre-wrap;">{{ n.note }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted" style="margin-top:10px;">No coach notes yet.</p>
+  {% endif %}
 </div>
 
 <div class="card">
@@ -139,7 +189,10 @@
       </div>
       <div class="v" style="white-space:pre-wrap;background:#f7f7f5;padding:10px;border-radius:6px;">{{ player.heritage_info_details or '—' }}</div>
       {% if player.heritage_info_document_links %}
-      <div class="v" style="margin-top:6px;">Documents: {{ player.heritage_info_document_links }}</div>
+      <div class="v" style="margin-top:6px;">
+        Documents:
+        {% for item in split_links(player.heritage_info_document_links) %}{% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener">View {{ loop.index }}</a>{% else %}{{ item.text }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+      </div>
       {% endif %}
     {% elif player.heritage_info_requested_at %}
       <p class="muted" style="margin-top:4px;">

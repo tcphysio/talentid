@@ -117,6 +117,31 @@ opening every profile. The link stays valid for repeat submissions (an
 applicant who finds more documents later can just reuse it), and staff can
 send a fresh one at any time without erasing what's already been submitted.
 
+**Coach notes and the follow-up brief.** A player's detail page has a
+"Coach notes" section separate from the pipeline actions (Contacted /
+Shortlisted / etc.) — free text plus a category (General / Technical /
+Physical / Character / Availability), attributed to whoever's logged in
+when they add it. These are for anyone assessing the player on cricket
+grounds, not just admin staff, so a coach needs their own staff login (see
+"Staff logins" below) to use it. Notes are stored in the same
+`review_actions` audit table as everything else (as
+`action = "Coach note: <category>"`), so no schema change was needed — they
+just get filtered out of the general audit trail and shown in their own
+list instead. Each player also has an **Open follow-up brief** link, a
+separate printable page (`/admin/player/<id>/brief`) with the player's
+identity/eligibility snapshot, clickable evidence links, and every coach
+note in date order — nothing else (no internal status history, no
+eligibility-override reasoning) since it's meant to leave the CRM, e.g. into
+a squad review pack or a note to a selector. It's a plain HTML page with a
+"Print / Save as PDF" button rather than a generated file, so there's
+nothing extra to host or maintain.
+
+**Evidence links are clickable.** `video_links`, `scorecard_links`, and
+heritage document links are stored as comma-separated text, same as always,
+but the player page and the follow-up brief now render each one as a link
+(opens in a new tab) when it looks like a URL, and as plain text otherwise
+— so a coach pasting "will send later" doesn't turn into a dead link.
+
 **Scoring (0–100).** Weighted mostly on playing level, with smaller
 contributions from eligibility clarity and evidence provided (video,
 scorecards). Weights are a starting point in `compute_score()` — the

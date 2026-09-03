@@ -12,6 +12,7 @@ See README.md for deployment notes and how to wire real email sending.
 """
 
 import os
+import re
 import secrets
 from functools import wraps
 from urllib.parse import urlparse
@@ -95,6 +96,39 @@ def csrf_token():
         token = secrets.token_hex(16)
         session["csrf_token"] = token
     return token
+
+
+_URL_RE = re.compile(r"^(https?://|www\.)", re.IGNORECASE)
+
+
+@app.template_global("split_links")
+def split_links(raw):
+    """Split a comma-separated string of links (video_links, scorecard_links,
+    heritage_info_document_links -- all stored the same way) into a list of
+    {"text", "url"} dicts. "url" is only set when the piece actually looks
+    like a link, so something a coach typed like "will send later" renders
+    as plain text instead of a dead href."""
+    if not raw:
+        return []
+    items = []
+    for piece in raw.split(","):
+        piece = piece.strip()
+        if not piece:
+            continue
+        if _URL_RE.match(piece):
+            url = piece if piece.lower().startswith("http") else f"https://{piece}"
+            items.append({"text": piece, "url": url})
+        else:
+            items.append({"text": piece, "url": None})
+    return items
+
+
+# Coach notes are stored in review_actions like any other staff action, just
+# with action="Coach note: <category>" -- see player_action() below and
+# player_detail()/player_brief() where they're split back out by that
+# prefix. No schema change needed; review_actions already anticipated a
+# plain "Note" action, this just adds a category on top of it.
+COACH_NOTE_CATEGORIES = ["General", "Technical", "Physical", "Character", "Availability"]
 
 
 @app.before_request
@@ -519,21 +553,74 @@ def admin():
     )
 
 
+def _split_coach_notes(rows):
+    """Split a review_actions result set into (coach_notes, other_actions),
+    parsing the "Coach note: <category>" prefix back into a category field.
+    Used by both player_detail() and player_brief()."""
+    coach_notes, other_actions = [], []
+    for row in rows:
+        row = dict(row)
+        action = row.get("action") or ""
+        if action.startswith("Coach note"):
+            row["category"] = action.split(":", 1)[1].strip() if ":" in action else "General"
+            coach_notes.append(row)
+        else:
+            other_actions.append(row)
+    return coach_notes, other_actions
+
+
 @app.route("/admin/player/<int:player_id>")
 @login_required
 def player_detail(player_id):
     conn = get_conn()
     player = conn.execute("SELECT * FROM players WHERE id = ?", (player_id,)).fetchone()
+    if player is None:
+        conn.close()
+        abort(404)
     follow_ups = conn.execute(
         "SELECT * FROM follow_ups WHERE player_id = ? ORDER BY created_at DESC", (player_id,)
     ).fetchall()
-    actions = conn.execute(
+    all_actions = conn.execute(
         "SELECT * FROM review_actions WHERE player_id = ? ORDER BY created_at DESC", (player_id,)
     ).fetchall()
+    coach_notes, actions = _split_coach_notes(all_actions)
     conn.close()
     missing = (player["missing_fields"] or "").split(",") if player["missing_fields"] else []
     return render_template(
-        "player_detail.html", player=player, follow_ups=follow_ups, actions=actions, missing=missing
+        "player_detail.html",
+        player=player,
+        follow_ups=follow_ups,
+        actions=actions,
+        coach_notes=coach_notes,
+        missing=missing,
+    )
+
+
+@app.route("/admin/player/<int:player_id>/brief")
+@login_required
+def player_brief(player_id):
+    """Printable follow-up brief: identity/eligibility snapshot, evidence
+    links, and coach notes only -- no admin/pipeline actions (status
+    changes, eligibility overrides), since those aren't meant for an
+    external audience. Rendered as its own page; staff use the browser's
+    Print / Save as PDF rather than the site generating a file server-side,
+    which needs no extra dependency or moving part to keep alive on Render's
+    free tier."""
+    conn = get_conn()
+    player = conn.execute("SELECT * FROM players WHERE id = ?", (player_id,)).fetchone()
+    if player is None:
+        conn.close()
+        abort(404)
+    all_actions = conn.execute(
+        "SELECT * FROM review_actions WHERE player_id = ? ORDER BY created_at ASC", (player_id,)
+    ).fetchall()
+    conn.close()
+    coach_notes, _ = _split_coach_notes(all_actions)
+    return render_template(
+        "player_brief.html",
+        player=player,
+        coach_notes=coach_notes,
+        generated_at=datetime.now().strftime("%d %b %Y, %H:%M"),
     )
 
 
@@ -546,6 +633,15 @@ def player_action(player_id):
     # form field anyone could type any name into.
     staff_name = session.get("staff_display_name", "Staff")
     staff_id = session.get("staff_id")
+
+    if action == "Coach note":
+        category = request.form.get("note_category", "General").strip()
+        if category not in COACH_NOTE_CATEGORIES:
+            category = "General"
+        action = f"Coach note: {category}"
+        if not note.strip():
+            flash("Note can't be empty.", "error")
+            return redirect(url_for("player_detail", player_id=player_id))
 
     conn = get_conn()
     conn.execute(
