@@ -123,6 +123,24 @@ def split_links(raw):
     return items
 
 
+@app.template_global("calc_age")
+def calc_age(dob):
+    """Age in whole years from a date_of_birth string (stored as the HTML
+    date input's YYYY-MM-DD), for the dashboard's Age column. Computed at
+    display time rather than stored -- a stored age would need re-computing
+    every day just to stay correct, for no benefit over computing it once
+    when the page renders. Returns None for blank/unparseable values
+    (older rows from before date_of_birth was required)."""
+    if not dob:
+        return None
+    try:
+        born = datetime.strptime(dob.strip(), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+    today = datetime.now().date()
+    return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+
+
 # Coach notes are stored in review_actions like any other staff action, just
 # with action="Coach note: <category>" -- see player_action() below and
 # player_detail()/player_brief() where they're split back out by that
@@ -528,6 +546,12 @@ def admin():
         "score_asc": "score ASC",
         "submitted_desc": "submitted_at DESC",
         "submitted_asc": "submitted_at ASC",
+        # date_of_birth is stored as the HTML date input's YYYY-MM-DD, which
+        # sorts lexicographically the same as chronologically on both
+        # backends -- no need for date parsing in SQL. Youngest first means
+        # the most recent birthdate first, i.e. DESC.
+        "age_asc": "date_of_birth DESC",
+        "age_desc": "date_of_birth ASC",
     }
     query += f" ORDER BY {order_map.get(sort, 'score DESC')}"
 

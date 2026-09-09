@@ -59,6 +59,8 @@
         <option value="score_asc" {% if sort == 'score_asc' %}selected{% endif %}>Score (low → high)</option>
         <option value="submitted_desc" {% if sort == 'submitted_desc' %}selected{% endif %}>Newest first</option>
         <option value="submitted_asc" {% if sort == 'submitted_asc' %}selected{% endif %}>Oldest first</option>
+        <option value="age_asc" {% if sort == 'age_asc' %}selected{% endif %}>Age (youngest first)</option>
+        <option value="age_desc" {% if sort == 'age_desc' %}selected{% endif %}>Age (oldest first)</option>
       </select>
     </div>
     <div>
@@ -67,10 +69,13 @@
   </form>
 </div>
 
+<div style="overflow-x:auto;">
 <table>
   <thead>
     <tr>
       <th>Name</th>
+      <th>Age</th>
+      <th>Contact</th>
       <th>Location</th>
       <th>Level</th>
       <th>Eligibility</th>
@@ -85,6 +90,11 @@
     {% for p in players %}
     <tr>
       <td><a class="row-link" href="{{ url_for('player_detail', player_id=p.id) }}">{{ p.full_name }}</a></td>
+      <td>{{ calc_age(p.date_of_birth) or '—' }}</td>
+      <td>
+        <a href="mailto:{{ p.email }}">{{ p.email }}</a>
+        {% if p.phone %}<br><a class="muted" href="tel:{{ p.phone }}">{{ p.phone }}</a>{% endif %}
+      </td>
       <td>{{ p.location_bucket }} <span class="muted">({{ p.country_of_residence }})</span></td>
       <td>{{ p.level_tier }}</td>
       <td>
@@ -107,9 +117,10 @@
       <td class="muted">{{ p.submitted_at }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="9" class="muted">No submissions match these filters.</td></tr>
+    <tr><td colspan="11" class="muted">No submissions match these filters.</td></tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 
 {% endblock %}
