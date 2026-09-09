@@ -75,7 +75,6 @@
     <tr>
       <th>Name</th>
       <th>Age</th>
-      <th>Contact</th>
       <th>Location</th>
       <th>Level</th>
       <th>Eligibility</th>
@@ -84,6 +83,7 @@
       <th>Priority</th>
       <th>Status</th>
       <th>Submitted</th>
+      <th>Contact</th>
     </tr>
   </thead>
   <tbody>
@@ -91,10 +91,6 @@
     <tr>
       <td><a class="row-link" href="{{ url_for('player_detail', player_id=p.id) }}">{{ p.full_name }}</a></td>
       <td>{{ calc_age(p.date_of_birth) or '—' }}</td>
-      <td>
-        <a href="mailto:{{ p.email }}">{{ p.email }}</a>
-        {% if p.phone %}<br><a class="muted" href="tel:{{ p.phone }}">{{ p.phone }}</a>{% endif %}
-      </td>
       <td>{{ p.location_bucket }} <span class="muted">({{ p.country_of_residence }})</span></td>
       <td>{{ p.level_tier }}</td>
       <td>
@@ -115,6 +111,10 @@
       </td>
       <td>{{ p.status }}</td>
       <td class="muted">{{ p.submitted_at }}</td>
+      <td>
+        <a href="mailto:{{ p.email }}">{{ p.email }}</a>
+        {% if p.phone %}<br><a class="muted" href="tel:{{ p.phone }}">{{ p.phone }}</a>{% endif %}
+      </td>
     </tr>
     {% else %}
     <tr><td colspan="11" class="muted">No submissions match these filters.</td></tr>

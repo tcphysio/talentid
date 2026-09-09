@@ -22,7 +22,12 @@
     <div class="score-num">{{ player.score }}</div>
     <div>
       <div><strong>{{ player.full_name }}</strong></div>
-      <div class="muted">{{ player.email }} &middot; {{ player.country_of_residence }}</div>
+      <div class="muted">
+        <a href="mailto:{{ player.email }}">{{ player.email }}</a>
+        {% if player.phone %} &middot; <a href="tel:{{ player.phone }}">{{ player.phone }}</a>{% endif %}
+        {% set age = calc_age(player.date_of_birth) %}{% if age %} &middot; Age {{ age }}{% endif %}
+        &middot; {{ player.country_of_residence }}
+      </div>
       <div style="margin-top:6px;">
         {% if player.priority_tier == 'Hot Lead' %}<span class="pill hot">Hot Lead</span>
         {% elif player.priority_tier == 'Warm' %}<span class="pill warm">Warm</span>
