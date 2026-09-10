@@ -26,6 +26,7 @@
         <a href="mailto:{{ player.email }}">{{ player.email }}</a>
         {% if player.phone %} &middot; <a href="tel:{{ player.phone }}">{{ player.phone }}</a>{% endif %}
         {% set age = calc_age(player.date_of_birth) %}{% if age %} &middot; Age {{ age }}{% endif %}
+        {% if player.date_of_birth %} (DOB {{ player.date_of_birth }}){% endif %}
         &middot; {{ player.country_of_residence }}
       </div>
       <div style="margin-top:6px;">
